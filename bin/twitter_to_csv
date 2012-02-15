@@ -1,0 +1,56 @@
+#!/usr/bin/env ruby 
+require 'rubygems'
+require 'open-uri'
+require 'optparse'
+require File.expand_path(File.join(File.dirname(__FILE__), '..', 'lib', 'twitter_to_csv'))
+
+options = { :csv => STDOUT }
+parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename($0)} [options]"
+  opts.separator ""
+  opts.separator "Specific options:"
+
+  opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
+    options[:verbose] = v
+  end
+
+  opts.on("-u", "--username USERNAME", "Twitter username") do |username|
+    options[:username] = username
+  end
+
+  opts.on("-p", "--password PASSWORD", "Twitter password") do |password|
+    options[:password] = password
+  end
+
+  opts.on("-c", "--csv [FILE]", "The CSV file to write to") do |csv|
+    options[:csv] = File.open(csv, 'a')
+  end
+  
+  opts.on("-j", "--json [FILE]", "The file to log all Twitter JSON to") do |json|
+    options[:json] = File.open(json, 'a')
+  end
+
+  opts.on("-f", "--filter [KEYWORDS]", "Keywords to ask Twitter to filter on") do |filter|
+    options[:filter] = filter.split(/\s*,\s*/)
+  end
+
+  opts.on_tail("-h", "--help", "Show this message") do
+    STDERR.puts opts
+    exit
+  end
+  
+  opts.on_tail("--version", "Show version") do
+    STDERR.puts "twitter_to_csv version #{TwitterToCsv::VERSION}"
+    exit
+  end
+end
+
+parser.parse!
+
+unless options[:username] && options[:password]
+  STDERR.puts "Error: Twitter username and password are required fields.\n\n"
+  STDERR.puts parser
+  exit 1
+end
+
+TwitterToCsv::CsvBuilder.new(options).run
