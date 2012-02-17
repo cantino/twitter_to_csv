@@ -10,10 +10,6 @@ parser = OptionParser.new do |opts|
   opts.separator ""
   opts.separator "Specific options:"
 
-  opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
-    options[:verbose] = v
-  end
-
   opts.on("-u", "--username USERNAME", "Twitter username") do |username|
     options[:username] = username
   end
@@ -32,6 +28,14 @@ parser = OptionParser.new do |opts|
 
   opts.on("-f", "--filter [KEYWORDS]", "Keywords to ask Twitter to filter on") do |filter|
     options[:filter] = filter.split(/\s*,\s*/)
+  end
+
+  opts.on("-e", "--require-english", "Attempt to filter out non-English tweets.", "This will have both false positives and false negatives.") do |e|
+    options[:require_english] = e
+  end
+
+  opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
+    options[:verbose] = v
   end
 
   opts.on_tail("-h", "--help", "Show this message") do

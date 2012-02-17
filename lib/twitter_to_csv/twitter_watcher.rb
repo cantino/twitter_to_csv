@@ -42,6 +42,7 @@ module TwitterToCsv
     def handle_status(status, block)
       return unless status
       return if status.has_key?('delete')
+      status['text'] = status['text'].gsub(/&lt;/, "<").gsub(/&gt;/, ">").gsub(/[\t\n\r]/, '  ')
       block.call(status)
     end
   end
