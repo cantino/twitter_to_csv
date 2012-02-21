@@ -4,7 +4,7 @@ require 'open-uri'
 require 'optparse'
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'lib', 'twitter_to_csv'))
 
-options = { :csv => STDOUT }
+options = { :csv => STDOUT, :fields => %w[text user.lang] }
 parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename($0)} [options]"
   opts.separator ""
@@ -18,16 +18,21 @@ parser = OptionParser.new do |opts|
     options[:password] = password
   end
 
-  opts.on("-c", "--csv [FILE]", "The CSV file to write to") do |csv|
+  opts.on("-c", "--csv [FILE]", "The CSV file to append to") do |csv|
+    options[:csv_appending] = File.exists?(csv)
     options[:csv] = File.open(csv, 'a')
   end
   
-  opts.on("-j", "--json [FILE]", "The file to log all Twitter JSON to") do |json|
+  opts.on("-j", "--json [FILE]", "The JSON file to append to") do |json|
     options[:json] = File.open(json, 'a')
   end
 
   opts.on("-f", "--filter [KEYWORDS]", "Keywords to ask Twitter to filter on") do |filter|
     options[:filter] = filter.split(/\s*,\s*/)
+  end
+
+  opts.on("-x", "--fields [FIELDS]", "Fields to include in the CSV") do |fields|
+    options[:fields] = fields.split(/\s*,\s*/)
   end
 
   opts.on("-e", "--require-english", "Attempt to filter out non-English tweets.", "This will have both false positives and false negatives.") do |e|
@@ -36,6 +41,14 @@ parser = OptionParser.new do |opts|
 
   opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
     options[:verbose] = v
+  end
+
+  opts.on_tail("", "--sample-fields [NUMBER_OF_SAMPLES]", "Sample fields from Twitter, display them, and then exit.") do |samples|
+    options[:sample_fields] = samples && samples.to_i
+  end
+
+  opts.on_tail("", "--replay-from-file FILENAME", "Replay status from a JSON dump file") do |replay_file|
+    options[:replay_from_file] = replay_file
   end
 
   opts.on_tail("-h", "--help", "Show this message") do
@@ -51,7 +64,7 @@ end
 
 parser.parse!
 
-unless options[:username] && options[:password]
+unless (options[:username] && options[:password]) || options[:replay_from_file]
   STDERR.puts "Error: Twitter username and password are required fields.\n\n"
   STDERR.puts parser
   exit 1

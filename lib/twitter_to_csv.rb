@@ -1,6 +1,6 @@
 require 'rubygems'
 require File.expand_path(File.join(File.dirname(__FILE__), "twitter_to_csv", "version"))
-require 'fastercsv'
+require 'csv'
 require 'pp'
 require 'json'
 require 'twitter/json_stream'
