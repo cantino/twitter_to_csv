@@ -1,8 +1,12 @@
+# encoding: UTF-8
 require 'pp'
 
 module TwitterToCsv
   class CsvBuilder
     attr_accessor :options, :sampled_fields
+
+    # http://daringfireball.net/2010/07/improved_regex_for_matching_urls
+    URL_REGEX = %r"\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s\(\)<>]+|\((?:[^\s\(\)<>]+|(?:\([^\s\(\)<>]+\)))*\))+(?:\((?:[^\s\(\)<>]+|(?:\([^\s\(\)<>]+\)))*\)|[^\s\`\!\(\)\[\]\{\};:'\".,<>\?«»“”‘’]))"i
 
     def initialize(options = {})
       @options = options
@@ -20,6 +24,7 @@ module TwitterToCsv
             handle_status status
           end
         rescue SignalException, SystemExit
+          EventMachine::stop_event_loop
           exit
         rescue StandardError => e
           STDERR.puts "\nException #{e.message}:\n#{e.backtrace.join("\n")}\n\n"
@@ -40,7 +45,13 @@ module TwitterToCsv
     end
 
     def log_csv_header
-      options[:csv].puts options[:fields].to_csv(:encoding => 'UTF-8', :force_quotes => true)
+      header_labels = options[:fields].dup
+
+      if options[:url_columns] && options[:url_columns] > 0
+        options[:url_columns].times { |i| header_labels << "url_#{i+1}" }
+      end
+
+      options[:csv].puts header_labels.to_csv(:encoding => 'UTF-8', :force_quotes => true)
     end
 
     def log_csv(status)
@@ -48,8 +59,14 @@ module TwitterToCsv
         field.split(".").inject(status) { |memo, segment|
           memo && memo[segment]
         }.to_s
-      end.to_csv(:encoding => 'UTF-8', :force_quotes => true)
-      options[:csv].puts csv_row
+      end
+
+      if options[:url_columns] && options[:url_columns] > 0
+        urls = status['text'].scan(URL_REGEX).flatten.compact
+        options[:url_columns].times { |i| csv_row << urls[i].to_s }
+      end
+
+      options[:csv].puts csv_row.to_csv(:encoding => 'UTF-8', :force_quotes => true)
     end
 
     def replay_from(filename)

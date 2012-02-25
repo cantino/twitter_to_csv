@@ -17,6 +17,24 @@ describe TwitterToCsv::CsvBuilder do
       end
     end
 
+    describe "log_csv_header" do
+      it "outputs the fields as header labels" do
+        string_io = StringIO.new
+        csv_builder = TwitterToCsv::CsvBuilder.new(:csv => string_io, :fields => %w[something something_else.a])
+        csv_builder.log_csv_header
+        string_io.rewind
+        string_io.read.should == '"something","something_else.a"' + "\n"
+      end
+
+      it "includes urls if requested" do
+        string_io = StringIO.new
+        csv_builder = TwitterToCsv::CsvBuilder.new(:csv => string_io, :fields => %w[something], :url_columns => 2)
+        csv_builder.log_csv_header
+        string_io.rewind
+        string_io.read.should == '"something","url_1","url_2"' + "\n"
+      end
+    end
+
     describe "logging to a CSV" do
       it "outputs the requested fields when requested in dot-notation" do
         string_io = StringIO.new
@@ -34,6 +52,22 @@ describe TwitterToCsv::CsvBuilder do
         })
         string_io.rewind
         string_io.read.should == "\"hello\",\"b\",\"foo\"\n"
+      end
+
+      it "can extract URLs" do
+        string_io = StringIO.new
+        csv_builder = TwitterToCsv::CsvBuilder.new(:csv => string_io, :fields => %w[something], :url_columns => 2)
+        csv_builder.handle_status({
+            'something' => "hello",
+            'text' => 'this is http://a.com/url and http://a.com/nother'
+        })
+        csv_builder.handle_status({
+            'something' => "hello",
+            'text' => 'this is http://a.com/url/again'
+        })
+        string_io.rewind
+        string_io.read.should == "\"hello\",\"http://a.com/url\",\"http://a.com/nother\"\n" +
+                                 "\"hello\",\"http://a.com/url/again\",\"\"\n"
       end
     end
   end
