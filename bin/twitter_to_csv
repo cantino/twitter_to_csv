@@ -43,7 +43,7 @@ parser = OptionParser.new do |opts|
     options[:verbose] = v
   end
 
-  opts.on_tail("", "--sample-fields NUMBER_OF_SAMPLES", "Record NUMBER_OF_SAMPLES tweets and then print out", "all of the field names seen.  Use to find out what can", "be passed to --fields.") do |samples|
+  opts.on_tail(nil, "--sample-fields NUMBER_OF_SAMPLES", "Record NUMBER_OF_SAMPLES tweets and then print out all","of the field names seen.  Use to find out what can be passed to.") do |samples|
     options[:sample_fields] = samples && samples.to_i
   end
 
