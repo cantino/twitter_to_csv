@@ -51,7 +51,7 @@ parser = OptionParser.new do |opts|
     options[:replay_from_file] = replay_file
   end
 
-  opts.on_tail("", "--url-columns NUMBER_OF_COLUMNS", "Extract up to NUMBER_OF_COLUMNS urls from the status and include them in the CSV") do |url_columns|
+  opts.on_tail("", "--url-columns NUM_COLUMNS", "Extract up to NUM_COLUMNS urls from the status and include them in the CSV") do |url_columns|
     options[:url_columns] = url_columns.to_i
   end
 
