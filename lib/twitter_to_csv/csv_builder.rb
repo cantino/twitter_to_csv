@@ -14,10 +14,10 @@ module TwitterToCsv
       @num_samples = 0
     end
 
-    def run
+    def run(&block)
       log_csv_header if options[:csv] && !options[:csv_appending]
       if options[:replay_from_file]
-        replay_from options[:replay_from_file]
+        replay_from options[:replay_from_file], &block
       else
         begin
           TwitterWatcher.new(options).run do |status|
@@ -35,10 +35,11 @@ module TwitterToCsv
       end
     end
 
-    def handle_status(status)
+    def handle_status(status, &block)
       if (options[:require_english] && is_english?(status)) || !options[:require_english]
         log_json(status) if options[:json]
         log_csv(status) if options[:csv]
+        yield_status(status, &block) if block
         sample_fields(status) if options[:sample_fields]
         STDERR.puts "Logging: #{status['text']}" if options[:verbose]
       end
@@ -55,7 +56,15 @@ module TwitterToCsv
     end
 
     def log_csv(status)
-      csv_row = options[:fields].map do |field|
+      options[:csv].puts output_row(status).to_csv(:encoding => 'UTF-8', :force_quotes => true)
+    end
+
+    def yield_status(status, &block)
+      block.call output_row(status)
+    end
+
+    def output_row(status)
+      row = options[:fields].map do |field|
         field.split(".").inject(status) { |memo, segment|
           memo && memo[segment]
         }.to_s
@@ -63,18 +72,18 @@ module TwitterToCsv
 
       if options[:url_columns] && options[:url_columns] > 0
         urls = status['text'].scan(URL_REGEX).flatten.compact
-        options[:url_columns].times { |i| csv_row << urls[i].to_s }
+        options[:url_columns].times { |i| row << urls[i].to_s }
       end
 
-      options[:csv].puts csv_row.to_csv(:encoding => 'UTF-8', :force_quotes => true)
+      row
     end
 
-    def replay_from(filename)
+    def replay_from(filename, &block)
       File.open(filename, "r") do |file|
         until file.eof?
           line = file.readline
           next if line =~ /\A------SEP.RATOR------\Z/i
-          handle_status JSON.parse(line)
+          handle_status JSON.parse(line), &block
         end
       end
     end

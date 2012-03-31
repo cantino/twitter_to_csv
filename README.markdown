@@ -37,7 +37,7 @@ You can extract URLs from the tweet into their own columns by including `--url-c
 
 ## Field names
 
-Use `--sample-fields 1000`` to output the occurrence count of different Twitter fields, like so:
+Use `--sample-fields 1000` to output the occurrence count of different Twitter fields, like so:
 
     twitter_to_csv --username <your twitter username> --password <your twitter password> --sample-fields 1000
 
