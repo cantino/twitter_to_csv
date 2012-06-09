@@ -32,6 +32,11 @@ module TwitterToCsv
           STDERR.puts " --> Twitter error: #{message} <--"
         end
 
+        stream.on_no_data do |message|
+          STDERR.puts "-- Got no data for awhile; trying to reconnect."
+          stream.unbind
+        end
+
         stream.on_max_reconnects do |timeout, retries|
           STDERR.puts " --> Oops, tried too many times! <--"
           EventMachine::stop_event_loop
