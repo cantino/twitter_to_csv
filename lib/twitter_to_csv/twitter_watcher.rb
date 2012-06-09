@@ -17,30 +17,33 @@ module TwitterToCsv
     end
 
     def run(&block)
-      EventMachine::run do
-        stream = Twitter::JSONStream.connect(
-          :path    => "/1/statuses/#{(filter && filter.length > 0) ? 'filter' : 'sample'}.json#{"?track=#{filter.join(",")}" if filter && filter.length > 0}",
-          :auth    => "#{username}:#{password}",
-          :ssl     => true
-        )
+      while true
+        EventMachine::run do
+          stream = Twitter::JSONStream.connect(
+            :path    => "/1/statuses/#{(filter && filter.length > 0) ? 'filter' : 'sample'}.json#{"?track=#{filter.join(",")}" if filter && filter.length > 0}",
+            :auth    => "#{username}:#{password}",
+            :ssl     => true
+          )
 
-        stream.each_item do |item|
-          handle_status JSON.parse(item), block
-        end
+          stream.each_item do |item|
+            handle_status JSON.parse(item), block
+          end
 
-        stream.on_error do |message|
-          STDERR.puts " --> Twitter error: #{message} <--"
-        end
+          stream.on_error do |message|
+            STDERR.puts " --> Twitter error: #{message} <--"
+          end
 
-        stream.on_no_data do |message|
-          STDERR.puts "-- Got no data for awhile; trying to reconnect."
-          stream.unbind
-        end
+          stream.on_no_data do |message|
+            STDERR.puts " --> Got no data for awhile; trying to reconnect."
+            EventMachine::stop_event_loop
+          end
 
-        stream.on_max_reconnects do |timeout, retries|
-          STDERR.puts " --> Oops, tried too many times! <--"
-          EventMachine::stop_event_loop
+          stream.on_max_reconnects do |timeout, retries|
+            STDERR.puts " --> Oops, tried too many times! <--"
+            EventMachine::stop_event_loop
+          end
         end
+        puts " --> Reconnecting..."
       end
     end
 
