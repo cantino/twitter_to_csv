@@ -6,3 +6,5 @@ source "http://rubygems.org"
 gem 'twitter-stream', :git => 'https://github.com/voloko/twitter-stream', :branch => :master, :require => "twitter/json-stream"
 gem 'em-http-request'
 gem 'unsupervised-language-detection'
+
+gem 'rspec'

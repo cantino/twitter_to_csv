@@ -4,7 +4,7 @@ require 'open-uri'
 require 'optparse'
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'lib', 'twitter_to_csv'))
 
-options = { :csv => STDOUT, :fields => %w[text] }
+options = { :fields => %w[text] }
 parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename($0)} [options]"
   opts.separator ""
@@ -20,7 +20,11 @@ parser = OptionParser.new do |opts|
 
   opts.on("-c", "--csv FILE", "The CSV file to append to") do |csv|
     options[:csv_appending] = File.exists?(csv)
-    options[:csv] = File.open(csv, 'a')
+    if csv == "-"
+      options[:csv] = STDOUT
+    else
+      options[:csv] = File.open(csv, 'a')
+    end
   end
 
   opts.on("-j", "--json FILE", "The JSON file to append to") do |json|
@@ -37,6 +41,10 @@ parser = OptionParser.new do |opts|
 
   opts.on("-e", "--require-english", "Attempt to filter out non-English tweets.", "This will have both false positives and false negatives.") do |e|
     options[:require_english] = e
+  end
+
+  opts.on("-a", "--analyze-gaps MINUTES", "Look at the stream and display gap information for gaps longer than MINUTES") do |gap_minutes|
+    options[:analyze_gaps] = gap_minutes && gap_minutes.to_i
   end
 
   opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|

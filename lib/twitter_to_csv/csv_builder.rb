@@ -41,6 +41,7 @@ module TwitterToCsv
         log_csv(status) if options[:csv]
         yield_status(status, &block) if block
         sample_fields(status) if options[:sample_fields]
+        analyze_gaps(status, options[:analyze_gaps]) if options[:analyze_gaps]
         STDERR.puts "Logging: #{status['text']}" if options[:verbose]
       end
     end
@@ -86,6 +87,19 @@ module TwitterToCsv
           handle_status JSON.parse(line), &block
         end
       end
+    end
+
+    def analyze_gaps(status, min_gap_size_in_minutes)
+      time = Time.parse(status['created_at'])
+      if !@last_status_seen_at
+        puts "First status seen at #{time}."
+      else
+        gap_length = (time - @last_status_seen_at) / 60
+        if gap_length > min_gap_size_in_minutes
+          puts "Gap of #{gap_length.to_i} minutes from #{@last_status_seen_at} to #{time}."
+        end
+      end
+      @last_status_seen_at = time
     end
 
     def sample_fields(status)
