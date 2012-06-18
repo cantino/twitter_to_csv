@@ -4,7 +4,7 @@ require 'open-uri'
 require 'optparse'
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'lib', 'twitter_to_csv'))
 
-options = { :fields => %w[text] }
+options = { :fields => %w[created_at text] }
 parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename($0)} [options]"
   opts.separator ""
@@ -18,17 +18,13 @@ parser = OptionParser.new do |opts|
     options[:password] = password
   end
 
-  opts.on("-c", "--csv FILE", "The CSV file to append to") do |csv|
+  opts.on("-c", "--csv FILE", "The CSV file to append to, or - for STDOUT") do |csv|
     options[:csv_appending] = File.exists?(csv)
-    if csv == "-"
-      options[:csv] = STDOUT
-    else
-      options[:csv] = File.open(csv, 'a')
-    end
+    options[:csv] = csv == "-" ? STDOUT : File.open(csv, 'a')
   end
 
-  opts.on("-j", "--json FILE", "The JSON file to append to") do |json|
-    options[:json] = File.open(json, 'a')
+  opts.on("-j", "--json FILE", "The JSON file to append to, or - for STDOUT") do |json|
+    options[:json] = json == "-" ? STDOUT : File.open(json, 'a')
   end
 
   opts.on("-f", "--filter KEYWORDS", "Keywords to ask Twitter to filter on") do |filter|
@@ -43,12 +39,12 @@ parser = OptionParser.new do |opts|
     options[:require_english] = e
   end
 
-  opts.on("-a", "--analyze-gaps MINUTES", "Look at the stream and display gap information for gaps longer than MINUTES") do |gap_minutes|
-    options[:analyze_gaps] = gap_minutes && gap_minutes.to_i
-  end
-
   opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
     options[:verbose] = v
+  end
+
+  opts.on("--analyze-gaps MINUTES", "Look at the stream and display gap information for gaps longer than MINUTES") do |gap_minutes|
+    options[:analyze_gaps] = gap_minutes && gap_minutes.to_i
   end
 
   opts.on_tail(nil, "--sample-fields NUMBER_OF_SAMPLES", "Record NUMBER_OF_SAMPLES tweets and then print out all","of the field names seen.  Use to find out what can be passed to.") do |samples|
