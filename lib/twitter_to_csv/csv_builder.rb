@@ -1,5 +1,7 @@
 # encoding: UTF-8
 require 'pp'
+require 'elif'
+require 'time'
 
 module TwitterToCsv
   class CsvBuilder
@@ -12,6 +14,7 @@ module TwitterToCsv
       @options = options
       @sampled_fields = {}
       @num_samples = 0
+      @retweet_counts = {}
     end
 
     def run(&block)
@@ -35,14 +38,43 @@ module TwitterToCsv
       end
     end
 
+    def display_rolledup_status?(status)
+      created_at = status['created_at'].is_a?(Time) ? status['created_at'] : Time.parse(status['created_at'])
+      @newest_status_at = created_at if @newest_status_at.nil?
+
+      if status['retweeted_status'] && status['retweeted_status']['id']
+        # This is a retweet.
+        original_created_at = status['retweeted_status']['created_at'].is_a?(Time) ? status['retweeted_status']['created_at'] : Time.parse(status['retweeted_status']['created_at'])
+        if !options[:retweet_window] || original_created_at >= created_at - options[:retweet_window] * 60 * 60 * 24
+          @retweet_counts[status['retweeted_status']['id']] ||= 0
+          @retweet_counts[status['retweeted_status']['id']] = status['retweeted_status']['retweet_count'] if status['retweeted_status']['retweet_count'] > @retweet_counts[status['retweeted_status']['id']]
+        end
+        false
+      else
+        # This is an original status.
+        if (@retweet_counts[status['id']] || 0) >= (options[:retweet_threshold] || 0)
+          if !options[:retweet_window] || created_at <= @newest_status_at - options[:retweet_window] * 60 * 60 * 24
+            status['retweet_count'] = @retweet_counts[status['id']] if @retweet_counts[status['id']] && @retweet_counts[status['id']] > status['retweet_count']
+            true
+          else
+            false
+          end
+        else
+          false
+        end
+      end
+    end
+
     def handle_status(status, &block)
       if (options[:require_english] && is_english?(status)) || !options[:require_english]
-        log_json(status) if options[:json]
-        log_csv(status) if options[:csv]
-        yield_status(status, &block) if block
-        sample_fields(status) if options[:sample_fields]
-        analyze_gaps(status, options[:analyze_gaps]) if options[:analyze_gaps]
-        STDERR.puts "Logging: #{status['text']}" if options[:verbose]
+        if options[:retweet_mode] != :rollup || display_rolledup_status?(status)
+          log_json(status) if options[:json]
+          log_csv(status) if options[:csv]
+          yield_status(status, &block) if block
+          sample_fields(status) if options[:sample_fields]
+          analyze_gaps(status, options[:analyze_gaps]) if options[:analyze_gaps]
+          STDERR.puts "Logging: #{status['text']}" if options[:verbose]
+        end
       end
     end
 
@@ -80,9 +112,11 @@ module TwitterToCsv
     end
 
     def replay_from(filename, &block)
-      File.open(filename, "r") do |file|
-        until file.eof?
-          line = file.readline
+      # If a retweet mode is being used, we read the file backwards using the Elif gem.
+      opener = options[:retweet_mode] ? Elif : File
+
+      opener.open(filename, "r") do |file|
+        file.each do |line|
           next if line =~ /\A------SEP.RATOR------\Z/i
           handle_status JSON.parse(line), &block
         end

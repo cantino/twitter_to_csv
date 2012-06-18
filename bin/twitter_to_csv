@@ -43,16 +43,16 @@ parser = OptionParser.new do |opts|
     options[:verbose] = v
   end
 
+  opts.on("-r", "--replay-from-file FILENAME", "Replay tweets from a JSON dump file") do |replay_file|
+    options[:replay_from_file] = replay_file
+  end
+
   opts.on("--analyze-gaps MINUTES", "Look at the stream and display gap information for gaps longer than MINUTES") do |gap_minutes|
     options[:analyze_gaps] = gap_minutes && gap_minutes.to_i
   end
 
   opts.on_tail(nil, "--sample-fields NUMBER_OF_SAMPLES", "Record NUMBER_OF_SAMPLES tweets and then print out all","of the field names seen.  Use to find out what can be passed to.") do |samples|
     options[:sample_fields] = samples && samples.to_i
-  end
-
-  opts.on_tail("", "--replay-from-file FILENAME", "Replay tweets from a JSON dump file") do |replay_file|
-    options[:replay_from_file] = replay_file
   end
 
   opts.on_tail("", "--url-columns NUM_COLUMNS", "Extract up to NUM_COLUMNS urls from the status and include them in the CSV") do |url_columns|
@@ -67,6 +67,22 @@ parser = OptionParser.new do |opts|
   opts.on_tail("--version", "Show version") do
     STDERR.puts "twitter_to_csv version #{TwitterToCsv::VERSION}"
     exit
+  end
+
+  opts.separator ""
+  opts.separator "If you would like to do special retweet handling, use the following options."
+  opts.separator "For these to function, you must be using --replay-from-file.  The replay will be performed in reverse."
+
+  opts.on("--retweet-mode MODE", "Determine how to handle retweets", "Options are just 'ROLLUP'") do |retweet_mode|
+    options[:retweet_mode] = retweet_mode.downcase.to_sym
+  end
+
+  opts.on("--retweet-threshold THRESHOLD", "Only consider statuses with at least THRESHOLD retweets") do |retweet_threshold|
+    options[:retweet_threshold] = retweet_threshold.to_i
+  end
+
+  opts.on("--retweet-window WINDOW", "Ignore retweets that occur beyond WINDOW days", "Additionally, statuses where WINDOW days have not yet passed will be ignored.") do |retweet_window|
+    options[:retweet_window] = retweet_window.to_i
   end
 end
 

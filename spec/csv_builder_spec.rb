@@ -70,6 +70,133 @@ describe TwitterToCsv::CsvBuilder do
                                  "\"hello\",\"http://a.com/url/again\",\"\"\n"
       end
     end
+
+    describe "retweet handling" do
+      def play_data(builder)
+        days = 60 * 60 * 24
+        now = Time.now
+
+        builder.handle_status({
+            'created_at' => now,
+            'retweeted_status' => {
+                'id' => 3,
+                'created_at' => now - 1 * days,
+                'retweet_count' => 1
+            },
+            'text' => 'RT not enough time has passed'
+        })
+
+        builder.handle_status({
+            'id' => 3,
+            'created_at' => now - 1 * days,
+            'text' => 'not enough time has passed',
+            'retweet_count' => 0
+        })
+
+        builder.handle_status({
+            'created_at' => now - 1 * days,
+            'retweeted_status' => {
+                'id' => 2,
+                'created_at' => now - 4 * days,
+                'retweet_count' => 3
+            },
+            'text' => 'RT 2 retweets'
+        })
+
+        builder.handle_status({
+            'created_at' => now - 2 * days,
+            'retweeted_status' => {
+                'id' => 4,
+                'created_at' => now - 5 * days,
+                'retweet_count' => 1
+            },
+            'text' => 'RT 1 retweet'
+        })
+
+        builder.handle_status({
+            'created_at' => now - 3 * days,
+            'retweeted_status' => {
+                'id' => 2,
+                'created_at' => now - 4 * days,
+                'retweet_count' => 2
+            },
+            'text' => 'RT 2 retweets'
+        })
+
+        builder.handle_status({
+            'created_at' => now - 3.5 * days,
+            'retweeted_status' => {
+                'id' => 2,
+                'created_at' => now - 4 * days,
+                'retweet_count' => 1
+            },
+            'text' => 'RT 2 retweets'
+        })
+
+        builder.handle_status({
+            'id' => 2,
+            'created_at' => now - 4 * days,
+            'text' => '2 retweets',
+            'retweet_count' => 0
+        })
+
+        builder.handle_status({
+            'id' => 4,
+            'created_at' => now - 5 * days,
+            'text' => '1 retweet',
+            'retweet_count' => 0
+        })
+
+        builder.handle_status({
+            'id' => 5,
+            'created_at' => now - 5.1 * days,
+            'text' => 'no retweets',
+            'retweet_count' => 0
+        })
+      end
+
+      it "skips statuses with fewer than :retweet_threshold retweets and ignores statues that haven't been seen for retweet_window yet'" do
+        string_io = StringIO.new
+        builder = TwitterToCsv::CsvBuilder.new(:retweet_mode => :rollup,
+                                               :retweet_threshold => 2,
+                                               :retweet_window => 2,
+                                               :csv => string_io,
+                                               :fields => %w[id retweet_count])
+        play_data builder
+        string_io.rewind
+        string_io.read.should == "\"2\",\"2\"\n"
+
+        string_io = StringIO.new
+        builder = TwitterToCsv::CsvBuilder.new(:retweet_mode => :rollup,
+                                               :retweet_threshold => 1,
+                                               :retweet_window => 3,
+                                               :csv => string_io,
+                                               :fields => %w[id retweet_count])
+        play_data builder
+        string_io.rewind
+        string_io.read.should == "\"2\",\"3\"\n" + "\"4\",\"1\"\n"
+
+        string_io = StringIO.new
+        builder = TwitterToCsv::CsvBuilder.new(:retweet_mode => :rollup,
+                                               :retweet_threshold => 1,
+                                               :retweet_window => 20,
+                                               :csv => string_io,
+                                               :fields => %w[id retweet_count])
+        play_data builder
+        string_io.rewind
+        string_io.read.should == ""
+
+        string_io = StringIO.new
+        builder = TwitterToCsv::CsvBuilder.new(:retweet_mode => :rollup,
+                                               :retweet_threshold => 1,
+                                               :retweet_window => nil,
+                                               :csv => string_io,
+                                               :fields => %w[id retweet_count])
+        play_data builder
+        string_io.rewind
+        string_io.read.should == "\"3\",\"1\"\n\"2\",\"3\"\n\"4\",\"1\"\n"
+      end
+    end
   end
 
   describe "#extract_fields" do
