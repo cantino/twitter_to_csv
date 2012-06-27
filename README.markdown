@@ -35,6 +35,20 @@ This filter isn't perfect and will have both false positives and false negatives
 
 You can extract URLs from the tweet into their own columns by including `--url-columns 3`, for example, to get up to 3 extracted URLs in their own columns.
 
+## Mind the Gap
+
+Sometimes the Twitter API goes down.  You can analyze a json output file to see where data gaps (of over 10 minutes, in this case) have occurred.
+
+    twitter_to_csv --replay-from-file out.json --analyze-gaps 10
+
+## Handling of Retweets
+
+Once you have a recorded Twitter stream, you can rollup retweets in various ways.  Here is an example that collapses retweets into the `retweet_count` field of the original tweet, only outputs tweets with at least 1 retweet, and ignores retweets that happened more than 7 days after the original tweet:
+
+    twitter_to_csv --replay-from-file out.json -c - --fields retweet_count,text -e --retweet-mode rollup --retweet-threshold 1 --retweet-window 7
+
+Note that all of the retweet features require you to `--replay-from-file` because they parse the stream backwards.
+
 ## Field names
 
 Use `--sample-fields 1000` to output the occurrence count of different Twitter fields, like so:
