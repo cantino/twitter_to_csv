@@ -121,6 +121,7 @@ module TwitterToCsv
           handle_status JSON.parse(line), &block
         end
       end
+      puts "Last status seen at #{@last_status_seen_at}." if options[:analyze_gaps] && @last_status_seen_at
     end
 
     def analyze_gaps(status, min_gap_size_in_minutes)
