@@ -155,7 +155,7 @@ module TwitterToCsv
     def afinn
       @afinn_cache ||= begin
         words_or_phrases = []
-        File.read(File.expand_path(File.join(File.dirname(__FILE__), "data", "AFINN-111.txt"))).each_line do |line|
+        File.read(File.expand_path(File.join(File.dirname(__FILE__), "afinn", "AFINN-111.txt"))).each_line do |line|
           word_or_phrase, valence = line.split(/\t/)
           pattern = Regexp::escape word_or_phrase.gsub(/-/, " ").gsub(/'/, '')
           words_or_phrases << [/\b#{pattern}\b/i, pattern.length, valence.to_f]
