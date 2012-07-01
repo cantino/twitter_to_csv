@@ -110,9 +110,26 @@ describe TwitterToCsv::CsvBuilder do
             'text' => 'some   kind of once-in-a-lifetime cool-fest in the right   direction or the right-direction or the son_of a bitch' # it tries both hyphenated and non-hyphenated, and does phrases
         })
         string_io.rewind
-        string_io.read.should == "\"hello1\",\"3.0\"\n" +
-                                 "\"hello2\",\"#{(3 + 2) / 2.0}\"\n" +
-                                 "\"hello3\",\"#{(0 + 3 + 1 + 3 + 3 + -5) / 6.0}\"\n"
+        string_io.read.should == "\"hello1\",\"3.0\",\"1\"\n" +
+                                 "\"hello2\",\"#{(3 + 2) / 2.0}\",\"2\"\n" +
+                                 "\"hello3\",\"#{(0 + 3 + 1 + 3 + 3 + -5) / 6.0}\",\"6\"\n"
+      end
+
+      it "can compute word count" do
+        string_io = StringIO.new
+        csv_builder = TwitterToCsv::CsvBuilder.new(:csv => string_io, :fields => %w[something], :compute_word_count => true)
+        csv_builder.handle_status({
+            'something' => "hello1",
+            'text' => 'i love cheese'
+
+        })
+        csv_builder.handle_status({
+            'something' => "hello2",
+            'text' => 'foo_bar baz9bing'
+        })
+        string_io.rewind
+        string_io.read.should == "\"hello1\",\"3\"\n" +
+                                 "\"hello2\",\"2\"\n"
       end
     end
 

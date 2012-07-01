@@ -78,7 +78,8 @@ module TwitterToCsv
     def log_csv_header
       header_labels = options[:fields].dup
 
-      header_labels << "average_sentiment" if options[:compute_sentiment]
+      header_labels += ["average_sentiment", "sentiment_words"] if options[:compute_sentiment]
+      header_labels << "word_count" if options[:compute_word_count]
 
       options[:url_columns].times { |i| header_labels << "url_#{i+1}" } if options[:url_columns] && options[:url_columns] > 0
       options[:hashtag_columns].times { |i| header_labels << "hash_tag_#{i+1}" } if options[:hashtag_columns] && options[:url_columns] > 0
@@ -102,9 +103,9 @@ module TwitterToCsv
         }.to_s
       end
 
-      if options[:compute_sentiment]
-        row << compute_sentiment(status["text"])
-      end
+      row += compute_sentiment(status["text"]) if options[:compute_sentiment]
+
+      row << status["text"].split(/\s+/).length if options[:compute_word_count]
 
       if options[:url_columns] && options[:url_columns] > 0
         urls = (status["entities"] && (status["entities"]["urls"] || []).map {|i| i["expanded_url"] || i["url"] }) || []
@@ -148,9 +149,9 @@ module TwitterToCsv
         end
       end
       if count > 0
-        valence_sum / count.to_f
+        [valence_sum / count.to_f, count]
       else
-        0
+        [0, 0]
       end
     end
 

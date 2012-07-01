@@ -71,6 +71,10 @@ parser = OptionParser.new do |opts|
     options[:compute_sentiment] = compute_sentiment
   end
 
+  opts.on_tail("", "--compute-word-count", "Include a word count for each status in the output CSV") do |compute_word_count|
+    options[:compute_word_count] = compute_word_count
+  end
+
   opts.on_tail("-h", "--help", "Show this message") do
     STDERR.puts opts
     exit
