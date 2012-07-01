@@ -4,5 +4,3 @@ Gemfile.lock
 pkg/*
 .idea
 data
-out.json
-out.csv

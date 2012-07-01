@@ -36,7 +36,7 @@ module TwitterToCsv
       end
     end
 
-    def within_time_window(status)
+    def within_time_window?(status)
       if options[:start] || options[:end]
         created_at = status['created_at'].is_a?(Time) ? status['created_at'] : Time.parse(status['created_at'])
         return false if options[:start] && created_at < options[:start]
@@ -84,8 +84,8 @@ module TwitterToCsv
     end
 
     def handle_status(status, &block)
-      if (options[:require_english] && is_english?(status)) || !options[:require_english]
-        if within_time_window(status)
+      if within_time_window?(status)
+        if (options[:require_english] && is_english?(status)) || !options[:require_english]
           if options[:retweet_mode] != :rollup || display_rolledup_status?(status)
             log_json(status) if options[:json]
             log_csv(status) if options[:csv]
