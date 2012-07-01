@@ -35,6 +35,15 @@ module TwitterToCsv
       end
     end
 
+    def within_time_window(status)
+      if options[:start] || options[:end]
+        created_at = status['created_at'].is_a?(Time) ? status['created_at'] : Time.parse(status['created_at'])
+        return false if options[:start] && created_at < options[:start]
+        return false if options[:end] && created_at >= options[:end]
+      end
+      true
+    end
+
     def display_rolledup_status?(status)
       created_at = status['created_at'].is_a?(Time) ? status['created_at'] : Time.parse(status['created_at'])
       @newest_status_at = created_at if @newest_status_at.nil?
@@ -64,13 +73,15 @@ module TwitterToCsv
 
     def handle_status(status, &block)
       if (options[:require_english] && is_english?(status)) || !options[:require_english]
-        if options[:retweet_mode] != :rollup || display_rolledup_status?(status)
-          log_json(status) if options[:json]
-          log_csv(status) if options[:csv]
-          yield_status(status, &block) if block
-          sample_fields(status) if options[:sample_fields]
-          analyze_gaps(status, options[:analyze_gaps]) if options[:analyze_gaps]
-          STDERR.puts "Logging: #{status['text']}" if options[:verbose]
+        if within_time_window(status)
+          if options[:retweet_mode] != :rollup || display_rolledup_status?(status)
+            log_json(status) if options[:json]
+            log_csv(status) if options[:csv]
+            yield_status(status, &block) if block
+            sample_fields(status) if options[:sample_fields]
+            analyze_gaps(status, options[:analyze_gaps]) if options[:analyze_gaps]
+            STDERR.puts "Logging: #{status['text']}" if options[:verbose]
+          end
         end
       end
     end

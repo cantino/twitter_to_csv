@@ -2,6 +2,7 @@
 require 'rubygems'
 require 'open-uri'
 require 'optparse'
+require 'time'
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'lib', 'twitter_to_csv'))
 
 options = { :fields => %w[created_at text] }
@@ -73,6 +74,14 @@ parser = OptionParser.new do |opts|
 
   opts.on_tail("", "--compute-word-count", "Include a word count for each status in the output CSV") do |compute_word_count|
     options[:compute_word_count] = compute_word_count
+  end
+
+  opts.on_tail("", "--start TIME", "Ignore tweets with a created_at earlier than TIME") do |start_time|
+    options[:start_time] = Time.parse(start_time)
+  end
+
+  opts.on_tail("", "--end TIME", "Ignore tweets with a created_at later than TIME") do |end_time|
+    options[:end_time] = Time.parse(end_time)
   end
 
   opts.on_tail("-h", "--help", "Show this message") do

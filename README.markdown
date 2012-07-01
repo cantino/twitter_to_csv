@@ -51,6 +51,12 @@ Sometimes the Twitter API goes down.  You can analyze a json output file to see 
 
     twitter_to_csv --replay-from-file out.json --analyze-gaps 10
 
+## Selecting Windows
+
+To select a specific window of time in a pre-recorded stream by `created_at`, pass in `--start` and `--end`, for example:
+
+    twitter_to_csv --replay-from-file out.json --start "Mon Mar 07 07:42:22 +0000 2011" --end "Mon Mar 08 07:42:22 +0000 2011"
+
 ## Handling of Retweets
 
 Once you have a recorded Twitter stream, you can rollup retweets in various ways.  Here is an example that collapses retweets into the `retweet_count` field of the original tweet, only outputs tweets with at least 1 retweet, and ignores retweets that happened more than 7 days after the original tweet:

@@ -1,5 +1,6 @@
 # encoding: utf-8
 require 'spec_helper'
+require 'time'
 
 describe TwitterToCsv::CsvBuilder do
   describe "#handle_status" do
@@ -14,6 +15,23 @@ describe TwitterToCsv::CsvBuilder do
         csv_builder.handle_status('text' => "The lang code can lie, but we trust it for now.", 'user' =>  { 'lang' => 'fr' })
         string_io.rewind
         string_io.read.should == "\"This is English\"\n\"This is still English\"\n"
+      end
+
+      it "honors start_time and end_time" do
+        string_io = StringIO.new
+        csv_builder = TwitterToCsv::CsvBuilder.new(:csv => string_io, :fields => %w[text],
+                                                   :start => Time.parse("Mon Mar 07 07:42:22 +0000 2011"),
+                                                   :end   => Time.parse("Mon Mar 08 02:00:00 +0000 2011"))
+
+        # Order shouldn't matter
+        csv_builder.handle_status('text' => "1", 'created_at' => 'Mon Mar 07 07:41:22 +0000 2011')
+        csv_builder.handle_status('text' => "6", 'created_at' => 'Mon Mar 08 02:01:00 +0000 2011')
+        csv_builder.handle_status('text' => "2", 'created_at' => 'Mon Mar 07 07:42:22 +0000 2011')
+        csv_builder.handle_status('text' => "4", 'created_at' => 'Mon Mar 08 01:41:22 +0000 2011')
+        csv_builder.handle_status('text' => "5", 'created_at' => 'Mon Mar 08 02:00:00 +0000 2011')
+        csv_builder.handle_status('text' => "3", 'created_at' => 'Mon Mar 07 10:00:00 +0000 2011')
+        string_io.rewind
+        string_io.read.should == "\"2\"\n\"4\"\n\"3\"\n"
       end
     end
 
@@ -36,7 +54,7 @@ describe TwitterToCsv::CsvBuilder do
     end
 
     describe "logging to a CSV" do
-      it "outputs the requested fields when requested in dot-notation" do
+      it "outputs the requested fields when specified in dot-notation" do
         string_io = StringIO.new
         csv_builder = TwitterToCsv::CsvBuilder.new(:csv => string_io, :fields => %w[something something_else.a something_else.c.d])
         csv_builder.handle_status({
