@@ -12,6 +12,7 @@ module TwitterToCsv
       @sampled_fields = {}
       @num_samples = 0
       @retweet_counts = {}
+      @retweet_hour_counts = {}
     end
 
     def run(&block)
@@ -51,9 +52,19 @@ module TwitterToCsv
       if status['retweeted_status'] && status['retweeted_status']['id']
         # This is a retweet.
         original_created_at = status['retweeted_status']['created_at'].is_a?(Time) ? status['retweeted_status']['created_at'] : Time.parse(status['retweeted_status']['created_at'])
-        if !options[:retweet_window] || original_created_at >= created_at - options[:retweet_window] * 60 * 60 * 24
+        if !options[:retweet_window] || created_at <= original_created_at + options[:retweet_window] * 60 * 60 * 24
           @retweet_counts[status['retweeted_status']['id']] ||= 0
           @retweet_counts[status['retweeted_status']['id']] = status['retweeted_status']['retweet_count'] if status['retweeted_status']['retweet_count'] > @retweet_counts[status['retweeted_status']['id']]
+
+
+          if options[:retweet_counts_at]
+            @retweet_hour_counts[status['retweeted_status']['id']] ||= options[:retweet_counts_at].map { 0 }
+            options[:retweet_counts_at].each.with_index do |hour_mark, index|
+              if created_at <= original_created_at + hour_mark * 60 * 60 && status['retweeted_status']['retweet_count'] > @retweet_hour_counts[status['retweeted_status']['id']][index]
+                @retweet_hour_counts[status['retweeted_status']['id']][index] = status['retweeted_status']['retweet_count']
+              end
+            end
+          end
         end
         false
       else
@@ -61,6 +72,7 @@ module TwitterToCsv
         if (@retweet_counts[status['id']] || 0) >= (options[:retweet_threshold] || 0)
           if !options[:retweet_window] || created_at <= @newest_status_at - options[:retweet_window] * 60 * 60 * 24
             status['retweet_count'] = @retweet_counts[status['id']] if @retweet_counts[status['id']] && @retweet_counts[status['id']] > status['retweet_count']
+            status['_retweet_hour_counts'] = @retweet_hour_counts.delete(status['id']) if options[:retweet_counts_at]
             true
           else
             false
@@ -92,6 +104,8 @@ module TwitterToCsv
       header_labels += ["average_sentiment", "sentiment_words"] if options[:compute_sentiment]
       header_labels << "word_count" if options[:compute_word_count]
 
+      options[:retweet_counts_at].each { |hours| header_labels << "retweets_at_#{hours}_hours" } if options[:retweet_counts_at]
+
       options[:url_columns].times { |i| header_labels << "url_#{i+1}" } if options[:url_columns] && options[:url_columns] > 0
       options[:hashtag_columns].times { |i| header_labels << "hash_tag_#{i+1}" } if options[:hashtag_columns] && options[:url_columns] > 0
       options[:user_mention_columns].times { |i| header_labels << "user_mention_#{i+1}" } if options[:user_mention_columns] && options[:user_mention_columns] > 0
@@ -117,6 +131,8 @@ module TwitterToCsv
       row += compute_sentiment(status["text"]) if options[:compute_sentiment]
 
       row << status["text"].split(/\s+/).length if options[:compute_word_count]
+
+      row += status["_retweet_hour_counts"] if options[:retweet_counts_at]
 
       if options[:url_columns] && options[:url_columns] > 0
         urls = (status["entities"] && (status["entities"]["urls"] || []).map {|i| i["expanded_url"] || i["url"] }) || []

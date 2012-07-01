@@ -52,35 +52,35 @@ parser = OptionParser.new do |opts|
     options[:analyze_gaps] = gap_minutes && gap_minutes.to_i
   end
 
-  opts.on_tail(nil, "--sample-fields NUMBER_OF_SAMPLES", "Record NUMBER_OF_SAMPLES tweets and then print out all","of the field names seen.  Use to find out what can be passed to.") do |samples|
+  opts.on("--sample-fields NUMBER_OF_SAMPLES", "Record NUMBER_OF_SAMPLES tweets and then print out all","of the field names seen.  Use to find out what can be passed to.") do |samples|
     options[:sample_fields] = samples && samples.to_i
   end
 
-  opts.on_tail("", "--url-columns NUM_COLUMNS", "Extract up to NUM_COLUMNS urls from the status and include them in the CSV") do |url_columns|
+  opts.on("--url-columns NUM_COLUMNS", "Extract up to NUM_COLUMNS urls from the status and include them in the CSV") do |url_columns|
     options[:url_columns] = url_columns.to_i
   end
 
-  opts.on_tail("", "--hash-columns NUM_COLUMNS", "Extract up to NUM_COLUMNS hashtags (#foo) from the status and include them in the CSV") do |hashtag_columns|
+  opts.on("--hash-columns NUM_COLUMNS", "Extract up to NUM_COLUMNS hashtags (#foo) from the status and include them in the CSV") do |hashtag_columns|
     options[:hashtag_columns] = hashtag_columns.to_i
   end
 
-  opts.on_tail("", "--user-columns NUM_COLUMNS", "Extract up to NUM_COLUMNS user mentions (@foo) from the status and include them in the CSV") do |user_mention_columns|
+  opts.on("--user-columns NUM_COLUMNS", "Extract up to NUM_COLUMNS user mentions (@foo) from the status and include them in the CSV") do |user_mention_columns|
     options[:user_mention_columns] = user_mention_columns.to_i
   end
 
-  opts.on_tail("-s", "--compute-sentiment", "Compute an average sentiment score for each status using the AFINN-111 sentiment dictionary") do |compute_sentiment|
+  opts.on("-s", "--compute-sentiment", "Compute an average sentiment score for each status using the AFINN-111 sentiment dictionary") do |compute_sentiment|
     options[:compute_sentiment] = compute_sentiment
   end
 
-  opts.on_tail("", "--compute-word-count", "Include a word count for each status in the output CSV") do |compute_word_count|
+  opts.on("--compute-word-count", "Include a word count for each status in the output CSV") do |compute_word_count|
     options[:compute_word_count] = compute_word_count
   end
 
-  opts.on_tail("", "--start TIME", "Ignore tweets with a created_at earlier than TIME") do |start_time|
+  opts.on("--start TIME", "Ignore tweets with a created_at earlier than TIME") do |start_time|
     options[:start_time] = Time.parse(start_time)
   end
 
-  opts.on_tail("", "--end TIME", "Ignore tweets with a created_at later than TIME") do |end_time|
+  opts.on("--end TIME", "Ignore tweets with a created_at later than TIME") do |end_time|
     options[:end_time] = Time.parse(end_time)
   end
 
@@ -102,19 +102,23 @@ parser = OptionParser.new do |opts|
     options[:retweet_mode] = retweet_mode.downcase.to_sym
   end
 
-  opts.on("--retweet-threshold THRESHOLD", "Only consider statuses with at least THRESHOLD retweets") do |retweet_threshold|
+  opts.on("--retweet-threshold COUNT", "Only consider statuses with at least COUNT retweets") do |retweet_threshold|
     options[:retweet_threshold] = retweet_threshold.to_i
   end
 
   opts.on("--retweet-window WINDOW", "Ignore retweets that occur beyond WINDOW days", "Additionally, statuses where WINDOW days have not yet passed will be ignored.") do |retweet_window|
     options[:retweet_window] = retweet_window.to_i
   end
+
+  opts.on("--retweet-counts-at HOURS", "Output the number of retweets seen at specific times after the original tweet") do |retweet_counts_at|
+    options[:retweet_counts_at] = retweet_counts_at.split(",").map(&:to_f)
+  end
 end
 
 parser.parse!
 
 unless (options[:username] && options[:password]) || options[:replay_from_file]
-  STDERR.puts "Error: Twitter username and password are required fields.\n\n"
+  STDERR.puts "Error: Twitter username and password are required fields unless you're replaying from a file.\n\n"
   STDERR.puts parser
   exit 1
 end

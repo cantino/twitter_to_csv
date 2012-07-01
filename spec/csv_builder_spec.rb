@@ -51,6 +51,19 @@ describe TwitterToCsv::CsvBuilder do
         string_io.rewind
         string_io.read.should == '"something","url_1","url_2"' + "\n"
       end
+
+      it "includes columns for the retweet_counts_at entries, if present" do
+        string_io = StringIO.new
+        csv_builder = TwitterToCsv::CsvBuilder.new(:csv => string_io,
+                                                   :fields => %w[something],
+                                                   :retweet_mode => :rollup,
+                                                   :retweet_threshold => 1,
+                                                   :retweet_window => 4,
+                                                   :retweet_counts_at => [0.5, 24, 48])
+        csv_builder.log_csv_header
+        string_io.rewind
+        string_io.read.should == '"something","retweets_at_0.5_hours","retweets_at_24_hours","retweets_at_48_hours"' + "\n"
+      end
     end
 
     describe "logging to a CSV" do
@@ -204,7 +217,7 @@ describe TwitterToCsv::CsvBuilder do
         })
 
         builder.handle_status({
-            'created_at' => now - 3.5 * days,
+            'created_at' => now - 3.99 * days,
             'retweeted_status' => {
                 'id' => 2,
                 'created_at' => now - 4 * days,
@@ -235,7 +248,7 @@ describe TwitterToCsv::CsvBuilder do
         })
       end
 
-      it "skips statuses with fewer than :retweet_threshold retweets and ignores statues that haven't been seen for retweet_window yet'" do
+      it "skips statuses with fewer than :retweet_threshold retweets and ignores statues that haven't been seen for retweet_window yet" do
         string_io = StringIO.new
         builder = TwitterToCsv::CsvBuilder.new(:retweet_mode => :rollup,
                                                :retweet_threshold => 2,
@@ -275,6 +288,30 @@ describe TwitterToCsv::CsvBuilder do
         play_data builder
         string_io.rewind
         string_io.read.should == "\"3\",\"1\"\n\"2\",\"3\"\n\"4\",\"1\"\n"
+
+        string_io = StringIO.new
+        builder = TwitterToCsv::CsvBuilder.new(:retweet_mode => :rollup,
+                                               :retweet_threshold => 0,
+                                               :retweet_window => nil,
+                                               :csv => string_io,
+                                               :fields => %w[id retweet_count])
+        play_data builder
+        string_io.rewind
+        string_io.read.should == "\"3\",\"1\"\n\"2\",\"3\"\n\"4\",\"1\"\n\"5\",\"0\"\n"
+      end
+
+      it "logs at the hourly marks requested in retweet_counts_at" do
+        string_io = StringIO.new
+        builder = TwitterToCsv::CsvBuilder.new(:retweet_mode => :rollup,
+                                               :retweet_threshold => 1,
+                                               :retweet_window => 4,
+                                               :retweet_counts_at => [0.5, 23, 24, 48, 73, 1000],
+                                               :csv => string_io,
+                                               :fields => %w[id retweet_count])
+        play_data builder
+        string_io.rewind
+        string_io.read.should == "\"2\",\"3\",\"1\",\"1\",\"2\",\"2\",\"3\",\"3\"\n" +
+                                 "\"4\",\"1\",\"0\",\"0\",\"0\",\"0\",\"1\",\"1\"\n"
       end
     end
   end
