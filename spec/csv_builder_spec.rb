@@ -54,20 +54,65 @@ describe TwitterToCsv::CsvBuilder do
         string_io.read.should == "\"hello\",\"b\",\"foo\"\n"
       end
 
-      it "can extract URLs" do
+      it "can extract URLs, hashtags, and user mentions" do
         string_io = StringIO.new
-        csv_builder = TwitterToCsv::CsvBuilder.new(:csv => string_io, :fields => %w[something], :url_columns => 2)
+        csv_builder = TwitterToCsv::CsvBuilder.new(:csv => string_io, :fields => %w[something], :url_columns => 2, :hashtag_columns => 2, :user_mention_columns => 1)
         csv_builder.handle_status({
-            'something' => "hello",
-            'text' => 'this is http://a.com/url and http://a.com/nother'
+            'something' => "hello1",
+            "entities" => {
+                "hashtags" => [
+                    { "text" => "AHashTag" },
+                    { "text" => "AnotherHashTag" },
+                    { "text" => "AThirdHashTag" }
+                ],
+                "user_mentions" => [
+                    { "screen_name" => "ScreenNameOne" },
+                    { "screen_name" => "ScreenNameTwo" },
+                    { "screen_name" => "ScreenNameThree" }
+                ],
+                "urls" => [
+                    { "url" => "http://t.co/1231" },
+                    { "url" => "http://t.co/1232", "expanded_url" => "http://a.real.url2" },
+                    { "url" => "http://t.co/1233", "expanded_url" => "http://a.real.url3" }
+                ]
+            },
+            'text' => 'some text'
+
         })
         csv_builder.handle_status({
-            'something' => "hello",
-            'text' => 'this is http://a.com/url/again'
+            'something' => "hello2",
+            "entities" => {
+                "hashtags" => [],
+                "user_mentions" => [],
+                "urls" => []
+            },
+            'text' => 'this is another status'
         })
         string_io.rewind
-        string_io.read.should == "\"hello\",\"http://a.com/url\",\"http://a.com/nother\"\n" +
-                                 "\"hello\",\"http://a.com/url/again\",\"\"\n"
+        string_io.read.should == "\"hello1\",\"http://t.co/1231\",\"http://a.real.url2\",\"AHashTag\",\"AnotherHashTag\",\"ScreenNameOne\"\n" +
+                                 "\"hello2\",\"\",\"\",\"\",\"\",\"\"\n"
+      end
+
+      it "can compute the average sentiment" do
+        string_io = StringIO.new
+        csv_builder = TwitterToCsv::CsvBuilder.new(:csv => string_io, :fields => %w[something], :compute_sentiment => true)
+        csv_builder.handle_status({
+            'something' => "hello1",
+            'text' => 'i love cheese'
+
+        })
+        csv_builder.handle_status({
+            'something' => "hello2",
+            'text' => 'i love cheese and like bread'
+        })
+        csv_builder.handle_status({
+            'something' => "hello3",
+            'text' => 'some   kind of once-in-a-lifetime cool-fest in the right   direction or the right-direction or the son_of a bitch' # it tries both hyphenated and non-hyphenated, and does phrases
+        })
+        string_io.rewind
+        string_io.read.should == "\"hello1\",\"3.0\"\n" +
+                                 "\"hello2\",\"#{(3 + 2) / 2.0}\"\n" +
+                                 "\"hello3\",\"#{(0 + 3 + 1 + 3 + 3 + -5) / 6.0}\"\n"
       end
     end
 

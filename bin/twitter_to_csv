@@ -59,6 +59,18 @@ parser = OptionParser.new do |opts|
     options[:url_columns] = url_columns.to_i
   end
 
+  opts.on_tail("", "--hash-columns NUM_COLUMNS", "Extract up to NUM_COLUMNS hashtags (#foo) from the status and include them in the CSV") do |hashtag_columns|
+    options[:hashtag_columns] = hashtag_columns.to_i
+  end
+
+  opts.on_tail("", "--user-columns NUM_COLUMNS", "Extract up to NUM_COLUMNS user mentions (@foo) from the status and include them in the CSV") do |user_mention_columns|
+    options[:user_mention_columns] = user_mention_columns.to_i
+  end
+
+  opts.on_tail("-s", "--compute-sentiment", "Compute an average sentiment score for each status using the AFINN-111 sentiment dictionary") do |compute_sentiment|
+    options[:compute_sentiment] = compute_sentiment
+  end
+
   opts.on_tail("-h", "--help", "Show this message") do
     STDERR.puts opts
     exit

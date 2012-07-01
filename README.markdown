@@ -31,9 +31,19 @@ You may want to limit to Tweets that appear to be writen in English.
 
 This filter isn't perfect and will have both false positives and false negatives, but it works pretty well.
 
-## URLS
+## URLS, Hashtags, and User Mentions
 
-You can extract URLs from the tweet into their own columns by including `--url-columns 3`, for example, to get up to 3 extracted URLs in their own columns.
+You can extract URLs, Hashtags, and User Mentions from the tweet into their own columns by using `--url-columns`, `--hashtag-columns`, and `--user-mention-columns`.
+For example, you could use `--url-columns 3` to get up to 3 extracted URLs in their own columns.
+
+## Sentiment Tagging
+
+Twitter To CSV can compute an average sentiment score for each tweet.  Provide `--compute-sentiment` to use this feature.
+The [AFINN-111](http://fnielsen.posterous.com/old-anew-a-sentiment-about-sentiment-analysis) valence database is used to look up the valence of
+each recognized word, then the average is computed, only considering words that have some known valence associated.  That is, "I love cheese" only has
+one word with valence, "love" with a score of 3, so the average is 3.  "I love cheese and like bread", on the other hand, has two words with
+valence, "love" (3) and "like" (2), and so has an average valence of (3 + 2) / 2, or 2.5.  The library will break hyphenated words up and score them as
+separate words unless the whole thing has a single known valence.
 
 ## Mind the Gap
 

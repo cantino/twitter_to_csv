@@ -7,9 +7,6 @@ module TwitterToCsv
   class CsvBuilder
     attr_accessor :options, :sampled_fields
 
-    # http://daringfireball.net/2010/07/improved_regex_for_matching_urls
-    URL_REGEX = %r"\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s\(\)<>]+|\((?:[^\s\(\)<>]+|(?:\([^\s\(\)<>]+\)))*\))+(?:\((?:[^\s\(\)<>]+|(?:\([^\s\(\)<>]+\)))*\)|[^\s\`\!\(\)\[\]\{\};:'\".,<>\?«»“”‘’]))"i
-
     def initialize(options = {})
       @options = options
       @sampled_fields = {}
@@ -81,9 +78,11 @@ module TwitterToCsv
     def log_csv_header
       header_labels = options[:fields].dup
 
-      if options[:url_columns] && options[:url_columns] > 0
-        options[:url_columns].times { |i| header_labels << "url_#{i+1}" }
-      end
+      header_labels << "average_sentiment" if options[:compute_sentiment]
+
+      options[:url_columns].times { |i| header_labels << "url_#{i+1}" } if options[:url_columns] && options[:url_columns] > 0
+      options[:hashtag_columns].times { |i| header_labels << "hash_tag_#{i+1}" } if options[:hashtag_columns] && options[:url_columns] > 0
+      options[:user_mention_columns].times { |i| header_labels << "user_mention_#{i+1}" } if options[:user_mention_columns] && options[:user_mention_columns] > 0
 
       options[:csv].puts header_labels.to_csv(:encoding => 'UTF-8', :force_quotes => true)
     end
@@ -103,12 +102,56 @@ module TwitterToCsv
         }.to_s
       end
 
+      if options[:compute_sentiment]
+        row << compute_sentiment(status["text"])
+      end
+
       if options[:url_columns] && options[:url_columns] > 0
-        urls = status['text'].scan(URL_REGEX).flatten.compact
+        urls = (status["entities"] && (status["entities"]["urls"] || []).map {|i| i["expanded_url"] || i["url"] }) || []
         options[:url_columns].times { |i| row << urls[i].to_s }
       end
 
+      if options[:hashtag_columns] && options[:hashtag_columns] > 0
+        hashes = (status["entities"] && (status["entities"]["hashtags"] || []).map {|i| i["text"] }) || []
+        options[:hashtag_columns].times { |i| row << hashes[i].to_s }
+      end
+
+      if options[:user_mention_columns] && options[:user_mention_columns] > 0
+        users = (status["entities"] && (status["entities"]["user_mentions"] || []).map {|i| i["screen_name"] }) || []
+        options[:user_mention_columns].times { |i| row << users[i].to_s }
+      end
+
       row
+    end
+
+    def afinn
+      @afinn_cache ||= begin
+        words_or_phrases = []
+        File.read(File.expand_path(File.join(File.dirname(__FILE__), "data", "AFINN-111.txt"))).each_line do |line|
+          word_or_phrase, valence = line.split(/\t/)
+          pattern = Regexp::escape word_or_phrase.gsub(/-/, " ").gsub(/'/, '')
+          words_or_phrases << [/\b#{pattern}\b/i, pattern.length, valence.to_f]
+        end
+        words_or_phrases.sort {|b, a| a[1] <=> b[1] }
+      end
+    end
+
+    def compute_sentiment(original_text)
+      text = original_text.downcase.gsub(/'/, '').gsub(/[^a-z0-9]/, ' ').gsub(/\s+/, ' ').strip
+      count = 0
+      valence_sum = 0
+      afinn.each do |pattern, length, valence|
+        while text =~ pattern
+          text.sub! pattern, ''
+          valence_sum += valence
+          count += 1
+        end
+      end
+      if count > 0
+        valence_sum / count.to_f
+      else
+        0
+      end
     end
 
     def replay_from(filename, &block)
