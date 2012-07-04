@@ -24,12 +24,12 @@ Alternatively, you can always stream directly to CSV:
 
 ## Requiring English
 
-You may want to limit to Tweets that appear to be writen in English.
+You may want to limit to Tweets that appear to be written in English.
 
     twitter_to_csv --username <your twitter username> --password <your twitter password> \
                    --require-english --fields ...
 
-This filter isn't perfect and will have both false positives and false negatives, but it works pretty well.
+This filter isn't perfect and will have both false positives and false negatives, but it works fairly well.
 
 ## URLS, Hashtags, and User Mentions
 
@@ -45,11 +45,13 @@ one word with valence, "love" with a score of 3, so the average is 3.  "I love c
 valence, "love" (3) and "like" (2), and so has an average valence of (3 + 2) / 2, or 2.5.  The library will break hyphenated words up and score them as
 separate words unless the whole thing has a single known valence.
 
-## Mind the Gap
+## Handling of Retweets
 
-Sometimes the Twitter API goes down.  You can analyze a json output file to see where data gaps (of over 10 minutes, in this case) have occurred.
+Once you have a recorded Twitter stream, you can rollup retweets in various ways.  Here is an example that collapses retweets into the `retweet_count` field of the original tweet, only outputs tweets with at least 1 retweet, ignores retweets that happened more than 7 days after the original tweet, and outputs retweet count columns at half an hour, 2 hours, and 2 days after the original tweet:
 
-    twitter_to_csv --replay-from-file out.json --analyze-gaps 10
+    twitter_to_csv --replay-from-file out.json -c out.csv --fields retweet_count,text -e --retweet-mode rollup --retweet-threshold 1 --retweet-window 7 --retweet-counts-at 0.5,2,48
+
+Note that all of the retweet features require you to `--replay-from-file` because they parse the stream backwards.  They will not function correctly from the stream directly.
 
 ## Selecting Windows
 
@@ -57,13 +59,11 @@ To select a specific window of time in a pre-recorded stream by `created_at`, pa
 
     twitter_to_csv --replay-from-file out.json --start "Mon Mar 07 07:42:22 +0000 2011" --end "Mon Mar 08 07:42:22 +0000 2011"
 
-## Handling of Retweets
+## Mind the Gap
 
-Once you have a recorded Twitter stream, you can rollup retweets in various ways.  Here is an example that collapses retweets into the `retweet_count` field of the original tweet, only outputs tweets with at least 1 retweet, ignores retweets that happened more than 7 days after the original tweet, and outputes retweet count columns at half an hour, 2 hours, and 2 days after the original tweet:
+Sometimes the Twitter API goes down.  You can analyze a json output file to see where data gaps (of over 10 minutes, in this case) have occurred:
 
-    twitter_to_csv --replay-from-file out.json -c - --fields retweet_count,text -e --retweet-mode rollup --retweet-threshold 1 --retweet-window 7 --retweet-counts-at 0.5,2,48
-
-Note that all of the retweet features require you to `--replay-from-file` because they parse the stream backwards.
+    twitter_to_csv --replay-from-file out.json --analyze-gaps 10
 
 ## Field names
 
