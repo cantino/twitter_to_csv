@@ -49,7 +49,12 @@ separate words unless the whole thing has a single known valence.
 
 Once you have a recorded Twitter stream, you can rollup retweets in various ways.  Here is an example that collapses retweets into the `retweet_count` field of the original tweet, only outputs tweets with at least 1 retweet, ignores retweets that happened more than 7 days after the original tweet, and outputs retweet count columns at half an hour, 2 hours, and 2 days after the original tweet:
 
-    twitter_to_csv --replay-from-file out.json -c out.csv --fields retweet_count,text -e --retweet-mode rollup --retweet-threshold 1 --retweet-window 7 --retweet-counts-at 0.5,2,48
+    twitter_to_csv --replay-from-file out.json -c out.csv \
+                   --retweet-mode rollup \
+                   --retweet-threshold 1 \
+                   --retweet-window 7 \
+                   --retweet-counts-at 0.5,2,48 \
+                   --fields retweet_count,text
 
 Note that all of the retweet features require you to `--replay-from-file` because they parse the stream backwards.  They will not function correctly from the stream directly.
 
@@ -57,7 +62,10 @@ Note that all of the retweet features require you to `--replay-from-file` becaus
 
 To select a specific window of time in a pre-recorded stream by `created_at`, pass in `--start` and `--end`, for example:
 
-    twitter_to_csv --replay-from-file out.json --start "Mon Mar 07 07:42:22 +0000 2011" --end "Mon Mar 08 07:42:22 +0000 2011"
+    twitter_to_csv --replay-from-file out.json \
+                   --start "Mon Mar 07 07:42:22 +0000 2011" \
+                   --end "Mon Mar 08 07:42:22 +0000 2011" \
+                   ...
 
 ## Mind the Gap
 
