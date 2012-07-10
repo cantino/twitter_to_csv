@@ -9,10 +9,8 @@ describe TwitterToCsv::CsvBuilder do
         string_io = StringIO.new
         csv_builder = TwitterToCsv::CsvBuilder.new(:require_english => true, :csv => string_io, :fields => %w[text])
         csv_builder.handle_status('text' => "This is English", 'user' =>  { 'lang' => 'en' })
-        csv_builder.handle_status('text' => "هذه الجملة باللغة الإنجليزية.", 'user' =>  { 'lang' => 'en' })
         csv_builder.handle_status('text' => "Esta frase se encuentra en Ingles.", 'user' =>  { 'lang' => 'en' })
         csv_builder.handle_status('text' => "This is still English", 'user' =>  { 'lang' => 'en' })
-        csv_builder.handle_status('text' => "The lang code can lie, but we trust it for now.", 'user' =>  { 'lang' => 'fr' })
         string_io.rewind
         string_io.read.should == "\"This is English\"\n\"This is still English\"\n"
       end
@@ -50,6 +48,14 @@ describe TwitterToCsv::CsvBuilder do
         csv_builder.log_csv_header
         string_io.rewind
         string_io.read.should == '"something","url_1","url_2"' + "\n"
+      end
+
+      it "includes date fields if requested" do
+        string_io = StringIO.new
+        csv_builder = TwitterToCsv::CsvBuilder.new(:csv => string_io, :fields => %w[something], :date_fields => %w[created_at])
+        csv_builder.log_csv_header
+        string_io.rewind
+        string_io.read.should == '"something","created_at_week_day","created_at_day","created_at_month","created_at_year","created_at_hour","created_at_minute","created_at_second"' + "\n"
       end
 
       it "includes columns for the retweet_counts_at entries, if present" do
@@ -161,6 +167,32 @@ describe TwitterToCsv::CsvBuilder do
         string_io.rewind
         string_io.read.should == "\"hello1\",\"3\"\n" +
                                  "\"hello2\",\"2\"\n"
+      end
+
+      it "can return date fields" do
+        string_io = StringIO.new
+        csv_builder = TwitterToCsv::CsvBuilder.new(:csv => string_io, :fields => %w[something], :date_fields => %w[created_at])
+        csv_builder.handle_status({
+            'something' => "hello1",
+            'text' => 'i love cheese',
+            'created_at' => "2012-06-29 13:12:09 -0700"
+
+        })
+        string_io.rewind
+        string_io.read.should == "\"hello1\",\"5\",\"29\",\"6\",\"2012\",\"13\",\"12\",\"09\"\n"
+      end
+
+      it "can return a normalized source" do
+        string_io = StringIO.new
+        csv_builder = TwitterToCsv::CsvBuilder.new(:csv => string_io, :fields => %w[something], :normalize_source => true)
+        csv_builder.handle_status({
+            'something' => "hello1",
+            'text' => 'i love cheese',
+            'source' => "<a href=\"http://twitter.com/download/android\" rel=\"nofollow\">Twitter for Android</a>"
+
+        })
+        string_io.rewind
+        string_io.read.should == "\"hello1\",\"Twitter for Android\"\n"
       end
     end
 

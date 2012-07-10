@@ -110,6 +110,14 @@ module TwitterToCsv
       header_labels += ["average_sentiment", "sentiment_words"] if options[:compute_sentiment]
       header_labels << "word_count" if options[:compute_word_count]
 
+      row << "normalized_source" if options[:normalize_source]
+
+      (options[:date_fields] || []).each do |date_field|
+        %w[week_day day month year hour minute second].each do |value|
+          header_labels << "#{date_field}_#{value}"
+        end
+      end
+
       options[:retweet_counts_at].each { |hours| header_labels << "retweets_at_#{hours}_hours" } if options[:retweet_counts_at]
 
       options[:url_columns].times { |i| header_labels << "url_#{i+1}" } if options[:url_columns] && options[:url_columns] > 0
@@ -137,6 +145,22 @@ module TwitterToCsv
       row += compute_sentiment(status["text"]) if options[:compute_sentiment]
 
       row << status["text"].split(/\s+/).length if options[:compute_word_count]
+
+      row << status["source"].gsub(/<[^>]+>/, '').strip if options[:normalize_source]
+
+      (options[:date_fields] || []).each do |date_field|
+        time = Time.parse(date_field.split(".").inject(status) { |memo, segment|
+          memo && memo[segment]
+        }.to_s)
+
+        row << time.strftime("%w") # week_day
+        row << time.strftime("%-d") # day
+        row << time.strftime("%-m") # month
+        row << time.strftime("%Y") # year
+        row << time.strftime("%-H") # hour
+        row << time.strftime("%M") # minute
+        row << time.strftime("%S") # second
+      end
 
       row += status["_retweet_hour_counts"] if options[:retweet_counts_at]
 
