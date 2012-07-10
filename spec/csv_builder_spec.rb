@@ -20,8 +20,8 @@ describe TwitterToCsv::CsvBuilder do
       it "honors start_time and end_time" do
         string_io = StringIO.new
         csv_builder = TwitterToCsv::CsvBuilder.new(:csv => string_io, :fields => %w[text],
-                                                   :start => Time.parse("Mon Mar 07 07:42:22 +0000 2011"),
-                                                   :end   => Time.parse("Mon Mar 08 02:00:00 +0000 2011"))
+                                                   :start_time => Time.parse("Mon Mar 07 07:42:22 +0000 2011"),
+                                                   :end_time   => Time.parse("Mon Mar 08 02:00:00 +0000 2011"))
 
         # Order shouldn't matter
         csv_builder.handle_status('text' => "1", 'created_at' => 'Mon Mar 07 07:41:22 +0000 2011')

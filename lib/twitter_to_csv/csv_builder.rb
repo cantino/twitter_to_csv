@@ -37,10 +37,10 @@ module TwitterToCsv
     end
 
     def within_time_window?(status)
-      if options[:start] || options[:end]
+      if options[:start_time] || options[:end_time]
         created_at = status['created_at'].is_a?(Time) ? status['created_at'] : Time.parse(status['created_at'])
-        return false if options[:start] && created_at < options[:start]
-        return false if options[:end] && created_at >= options[:end]
+        return false if options[:start_time] && created_at < options[:start_time]
+        return false if options[:end_time] && created_at >= options[:end_time]
       end
       true
     end
@@ -55,7 +55,6 @@ module TwitterToCsv
         if !options[:retweet_window] || created_at <= original_created_at + options[:retweet_window] * 60 * 60 * 24
           @retweet_counts[status['retweeted_status']['id']] ||= 0
           @retweet_counts[status['retweeted_status']['id']] = status['retweeted_status']['retweet_count'] if status['retweeted_status']['retweet_count'] > @retweet_counts[status['retweeted_status']['id']]
-
 
           if options[:retweet_counts_at]
             @retweet_hour_counts[status['retweeted_status']['id']] ||= options[:retweet_counts_at].map { 0 }
@@ -72,7 +71,14 @@ module TwitterToCsv
         if (@retweet_counts[status['id']] || 0) >= (options[:retweet_threshold] || 0)
           if !options[:retweet_window] || created_at <= @newest_status_at - options[:retweet_window] * 60 * 60 * 24
             status['retweet_count'] = @retweet_counts[status['id']] if @retweet_counts[status['id']] && @retweet_counts[status['id']] > status['retweet_count']
-            status['_retweet_hour_counts'] = @retweet_hour_counts.delete(status['id']) if options[:retweet_counts_at]
+            if options[:retweet_counts_at]
+              retweet_hour_data = @retweet_hour_counts.delete(status['id'])
+              if !retweet_hour_data
+                puts "Encountered missing retweet_data for tweet##{status['id']}, possibly due to a repeating id or a deleted tweet."
+                return false
+              end
+              status['_retweet_hour_counts'] = retweet_hour_data
+            end
             true
           else
             false
@@ -244,15 +250,10 @@ module TwitterToCsv
         return false
       end
 
-      if status['text'] =~ /[^[:ascii:]]/
-        STDERR.puts "Skipping \"#{status['text']}\" due to non-ascii text." if options[:verbose]
-        return false
-      end
-
-      unless status['user']['lang'] == "en"
-        STDERR.puts "Skipping \"#{status['text']}\" due to lang of #{status['user']['lang']}." if options[:verbose]
-        return false
-      end
+      #unless status['user']['lang'] == "en"
+      #  STDERR.puts "Skipping \"#{status['text']}\" due to lang of #{status['user']['lang']}." if options[:verbose]
+      #  return false
+      #end
 
       unless UnsupervisedLanguageDetection.is_english_tweet?(status['text'])
         STDERR.puts "Skipping \"#{status['text']}\" due to UnsupervisedLanguageDetection guessing non-English" if options[:verbose]
