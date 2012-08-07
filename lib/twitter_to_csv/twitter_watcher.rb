@@ -1,3 +1,5 @@
+require 'cgi'
+
 module TwitterToCsv
   class TwitterWatcher
     attr_accessor :username, :password, :filter, :fetch_errors
@@ -20,7 +22,7 @@ module TwitterToCsv
       while true
         EventMachine::run do
           stream = Twitter::JSONStream.connect(
-            :path    => "/1/statuses/#{(filter && filter.length > 0) ? 'filter' : 'sample'}.json#{"?track=#{filter.join(",")}" if filter && filter.length > 0}",
+            :path    => "/1/statuses/#{(filter && filter.length > 0) ? 'filter' : 'sample'}.json#{"?track=#{filter.map {|f| CGI::escape(f) }.join(",")}" if filter && filter.length > 0}",
             :auth    => "#{username}:#{password}",
             :ssl     => true
           )

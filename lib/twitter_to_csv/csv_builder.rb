@@ -110,7 +110,7 @@ module TwitterToCsv
       header_labels += ["average_sentiment", "sentiment_words"] if options[:compute_sentiment]
       header_labels << "word_count" if options[:compute_word_count]
 
-      row << "normalized_source" if options[:normalize_source]
+      header_labels << "normalized_source" if options[:normalize_source]
 
       (options[:date_fields] || []).each do |date_field|
         %w[week_day day month year hour minute second].each do |value|
