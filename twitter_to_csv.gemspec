@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.version     = TwitterToCsv::VERSION
   s.authors     = ["Andrew Cantino"]
   s.email       = ["andrew@iterationlabs.com"]
-  s.homepage    = "https://github.com/iterationlabs/twitter_to_csv"
+  s.homepage    = "https://github.com/cantino/twitter_to_csv"
   s.summary     = %q{Dump the Twitter streaming API to a CSV or JSON file and then filter, handle retweets, apply sentiment analysis, and more.}
   s.description = %q{}
 
