@@ -169,17 +169,19 @@ describe TwitterToCsv::CsvBuilder do
                                  "\"hello2\",\"2\"\n"
       end
 
-      it "can return date fields" do
+      it "can return date fields and convert them to UTC" do
         string_io = StringIO.new
         csv_builder = TwitterToCsv::CsvBuilder.new(:csv => string_io, :fields => %w[something], :date_fields => %w[created_at])
         csv_builder.handle_status({
             'something' => "hello1",
             'text' => 'i love cheese',
             'created_at' => "2012-06-29 13:12:09 -0700"
-
         })
         string_io.rewind
-        string_io.read.should == "\"hello1\",\"5\",\"29\",\"6\",\"2012\",\"13\",\"12\",\"09\"\n"
+        time = Time.parse("2012-06-29 13:12:09 -0700").utc
+        string_io.read.should == '"' + ["hello1", time.strftime("%w"), time.strftime("%-d"),
+                                        time.strftime("%-m"), time.strftime("%Y"), time.strftime("%-H"),
+                                        time.strftime("%M"), time.strftime("%S")].join('","') + "\"\n"
       end
 
       it "can return a normalized source" do

@@ -151,7 +151,7 @@ module TwitterToCsv
       (options[:date_fields] || []).each do |date_field|
         time = Time.parse(date_field.split(".").inject(status) { |memo, segment|
           memo && memo[segment]
-        }.to_s)
+        }.to_s).utc
 
         row << time.strftime("%w") # week_day
         row << time.strftime("%-d") # day
