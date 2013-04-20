@@ -1,5 +1,7 @@
 # Twitter To CSV
 
+[![Build Status](https://travis-ci.org/cantino/twitter_to_csv.png)](https://travis-ci.org/cantino/twitter_to_csv)
+
 A tool for exporting the Twitter stream into a CSV file.
 
     (sudo) gem install twitter_to_csv
