@@ -5,7 +5,7 @@ require 'optparse'
 require 'time'
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'lib', 'twitter_to_csv'))
 
-options = { :fields => %w[created_at text] }
+options = { :fields => %w[created_at text], :bool_word_fields => [] }
 parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename($0)} [options]"
   opts.separator ""
@@ -82,6 +82,17 @@ parser = OptionParser.new do |opts|
 
   opts.on("--normalize-source", "Return just the domain name from the Tweet source (i.e., tweetdeck, facebook)") do |normalize_source|
     options[:normalize_source] = normalize_source
+  end
+
+  opts.on("--bool-word-field \"NAME:WORD AND WORD AND WORD\"",
+          "Create a named CSV column that is true when the word expression matches, false otherwise.",
+          "Word expressions are boolean expressions where neighboring words must occur sequentially",
+          "and you can use parentheses, AND, and OR to test for occurrence relationships.  Examples:",
+          "  keyword_any:tanning booth OR tanning booths OR tanningbooth",
+          "  keyword_both:tanning AND booth",
+          "  keyword_complex:tanning AND (booth OR bed)",
+          "This option can be used multiple times.") do |bool_word_field|
+    options[:bool_word_fields] << TwitterToCsv::BoolWordFieldParser.parse(bool_word_field)
   end
 
   opts.on("--start TIME", "Ignore tweets with a created_at earlier than TIME") do |start_time|

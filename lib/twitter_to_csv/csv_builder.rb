@@ -124,6 +124,10 @@ module TwitterToCsv
       options[:hashtag_columns].times { |i| header_labels << "hash_tag_#{i+1}" } if options[:hashtag_columns] && options[:url_columns] > 0
       options[:user_mention_columns].times { |i| header_labels << "user_mention_#{i+1}" } if options[:user_mention_columns] && options[:user_mention_columns] > 0
 
+      (options[:bool_word_fields] || []).each do |pattern|
+        header_labels << pattern[:name]
+      end
+
       options[:csv].puts header_labels.to_csv(:encoding => 'UTF-8', :force_quotes => true)
     end
 
@@ -177,6 +181,10 @@ module TwitterToCsv
       if options[:user_mention_columns] && options[:user_mention_columns] > 0
         users = (status["entities"] && (status["entities"]["user_mentions"] || []).map {|i| i["screen_name"] }) || []
         options[:user_mention_columns].times { |i| row << users[i].to_s }
+      end
+
+      (options[:bool_word_fields] || []).each do |pattern|
+        row << (TwitterToCsv::BoolWordFieldParser.check(pattern, status["text"]) ? "t" : "f")
       end
 
       row

@@ -169,6 +169,29 @@ describe TwitterToCsv::CsvBuilder do
                                  "\"hello2\",\"2\"\n"
       end
 
+      it "can extract boolean word fields" do
+        string_io = StringIO.new
+        patterns = [
+            TwitterToCsv::BoolWordFieldParser.parse("field1:hello AND world"),
+            TwitterToCsv::BoolWordFieldParser.parse("field2:hello"),
+            TwitterToCsv::BoolWordFieldParser.parse("field3:string OR text"),
+            TwitterToCsv::BoolWordFieldParser.parse("field3:hello this")
+        ]
+        csv_builder = TwitterToCsv::CsvBuilder.new(:csv => string_io, :fields => %w[something], :bool_word_fields => patterns)
+        csv_builder.handle_status({
+            'something' => "hello1",
+            'text' => 'hello this is a string'
+
+        })
+        csv_builder.handle_status({
+            'something' => "hello2",
+            'text' => 'hello world this is some text'
+        })
+        string_io.rewind
+        string_io.read.should == "\"hello1\",\"f\",\"t\",\"t\",\"t\"\n" +
+                                 "\"hello2\",\"t\",\"t\",\"t\",\"f\"\n"
+      end
+
       it "can return date fields and convert them to UTC" do
         string_io = StringIO.new
         csv_builder = TwitterToCsv::CsvBuilder.new(:csv => string_io, :fields => %w[something], :date_fields => %w[created_at])
