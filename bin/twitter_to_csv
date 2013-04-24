@@ -40,8 +40,12 @@ parser = OptionParser.new do |opts|
     options[:date_fields] = date_fields.split(/\s*,\s*/)
   end
 
-  opts.on("-e", "--require-english", "Attempt to filter out non-English tweets.", "This will have both false positives and false negatives.") do |e|
-    options[:require_english] = e
+  opts.on("-e", "--require-english [STRATEGY]", 
+                "Attempt to filter out non-English tweets. This will have both false positives and false negatives.",
+                "The strategy can be either 'uld' to use the UnsupervisedLanguageDetection Ruby gem,",
+                "'lang' to use Twitter's guessed 'lang' attribute, or 'both' to only remove tweets that",
+                "both Twitter and ULD think are non-English.  This is most conservative and is the default.") do |e|
+    options[:require_english] = (e || "both").downcase.to_sym
   end
 
   opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
@@ -84,7 +88,7 @@ parser = OptionParser.new do |opts|
     options[:normalize_source] = normalize_source
   end
 
-  opts.on("--bool-word-field \"NAME:WORD AND WORD AND WORD\"",
+  opts.on("-w", "--bool-word-field \"NAME:WORD AND WORD AND WORD\"",
           "Create a named CSV column that is true when the word expression matches, false otherwise.",
           "Word expressions are boolean expressions where neighboring words must occur sequentially",
           "and you can use parentheses, AND, and OR to test for occurrence relationships.  Examples:",
