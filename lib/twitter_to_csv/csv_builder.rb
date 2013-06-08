@@ -139,9 +139,19 @@ module TwitterToCsv
 
     def output_row(status)
       row = options[:fields].map do |field|
-        field.split(".").inject(status) { |memo, segment|
+        value = field.split(".").inject(status) { |memo, segment|
           memo && memo[segment]
         }.to_s
+
+        if options[:prefix_ids]
+          value = "id" + value if value.length > 0 && (field =~ /\Aid_str|id\Z/ || field =~ /_id|_id_str\Z/)
+        end
+
+        if options[:remove_quotes]
+          value = value.gsub(/\"/, '')
+        end
+
+        value
       end
 
       row += compute_sentiment(status["text"]) if options[:compute_sentiment]

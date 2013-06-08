@@ -88,6 +88,14 @@ parser = OptionParser.new do |opts|
     options[:normalize_source] = normalize_source
   end
 
+  opts.on("--remove-quotes", "This option strips all double quotes from the output to help some CSV parsers.") do |remove_quotes|
+    options[:remove_quotes] = remove_quotes
+  end
+
+  opts.on("--prefix-ids", "Prefix any field ending in _id or _id_str with 'id' to force parsing as a string in some programs.") do |prefix_ids|
+    options[:prefix_ids] = prefix_ids
+  end
+
   opts.on("-w", "--bool-word-field \"NAME:WORD AND WORD AND WORD\"",
           "Create a named CSV column that is true when the word expression matches, false otherwise.",
           "Word expressions are boolean expressions where neighboring words must occur sequentially",
