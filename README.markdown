@@ -75,6 +75,73 @@ Sometimes the Twitter API goes down.  You can analyze a json output file to see 
 
     twitter_to_csv --replay-from-file out.json --analyze-gaps 10
 
+## Creating Dynamic Binary Fields
+
+If you're doing research on Twitter, it may make sense to construct composite binary variables predicated on the existence of certain tokens in a tweet.  For example, you may want
+a variable called _sf_ that is true if the tweet contains _san francisco_ OR _sf_ OR _bay area_ (but not _area by the bay_).  You could do that as follows:
+
+    twitter_to_csv --replay-from-file out.json \
+                   --csv out.csv \
+                   -w "sf: san francisco OR sf OR bay area" \
+
+If you did want to allow _area by the bay_, you might need something like:
+
+                   -w "sf: san francisco OR sf OR (bay AND area)"
+
+## Other Options
+
+Use `twitter_to_csv --help` to see all available options:
+
+    Usage: twitter_to_csv [options]
+
+    Specific options:
+        -u, --username USERNAME          Twitter username
+        -p, --password PASSWORD          Twitter password
+        -c, --csv FILE                   The CSV file to append to, or - for STDOUT
+        -j, --json FILE                  The JSON file to append to, or - for STDOUT
+        -f, --filter KEYWORDS            Keywords to ask Twitter to filter on
+        -x, --fields FIELDS              Fields to include in the CSV
+            --date-fields FIELD_NAMES    Break these fields into separate numerical columns for weekday, day, month, your, hour, minute, and second.
+        -e, --require-english [STRATEGY] Attempt to filter out non-English tweets. This will have both false positives and false negatives.
+                                         The strategy can be either 'uld' to use the UnsupervisedLanguageDetection Ruby gem,
+                                         'lang' to use Twitter's guessed 'lang' attribute, or 'both' to only remove tweets that
+                                         both Twitter and ULD think are non-English.  This is most conservative and is the default.
+        -v, --[no-]verbose               Run verbosely
+        -r, --replay-from-file FILENAME  Replay tweets from a JSON dump file
+            --analyze-gaps MINUTES       Look at the stream and display gap information for gaps longer than MINUTES
+            --sample-fields NUMBER_OF_SAMPLES
+                                         Record NUMBER_OF_SAMPLES tweets and then print out all
+                                         of the field names seen.  Use to find out what can be passed to.
+            --url-columns NUM_COLUMNS    Extract up to NUM_COLUMNS urls from the status and include them in the CSV
+            --hash-columns NUM_COLUMNS   Extract up to NUM_COLUMNS hashtags (#foo) from the status and include them in the CSV
+            --user-columns NUM_COLUMNS   Extract up to NUM_COLUMNS user mentions (@foo) from the status and include them in the CSV
+        -s, --compute-sentiment          Compute an average sentiment score for each status using the AFINN-111 sentiment dictionary
+            --compute-word-count         Include a word count for each status in the output CSV
+            --normalize-source           Return just the domain name from the Tweet source (i.e., tweetdeck, facebook)
+            --remove-quotes              This option strips all double quotes from the output to help some CSV parsers.
+            --prefix-ids                 Prefix any field ending in _id or _id_str with 'id' to force parsing as a string in some programs.
+        -w "NAME:WORD AND WORD AND WORD",
+            --bool-word-field            Create a named CSV column that is true when the word expression matches, false otherwise.
+                                         Word expressions are boolean expressions where neighboring words must occur sequentially
+                                         and you can use parentheses, AND, and OR to test for occurrence relationships.  Examples:
+                                           keyword_any:tanning booth OR tanning booths OR tanningbooth
+                                           keyword_both:tanning AND booth
+                                           keyword_complex:tanning AND (booth OR bed)
+                                         This option can be used multiple times.
+            --start TIME                 Ignore tweets with a created_at earlier than TIME
+            --end TIME                   Ignore tweets with a created_at later than TIME
+
+    If you would like to do special retweet handling, use the following options.
+    For these to function, you must be using --replay-from-file.  The replay will be performed in reverse.
+            --retweet-mode MODE          Determine how to handle retweets
+                                         Options are just 'ROLLUP'
+            --retweet-threshold COUNT    Only consider statuses with at least COUNT retweets
+            --retweet-window WINDOW      Ignore retweets that occur beyond WINDOW days
+                                         Additionally, statuses where WINDOW days have not yet passed will be ignored.
+            --retweet-counts-at HOURS    Output the number of retweets seen at specific times after the original tweet
+        -h, --help                       Show this message
+            --version                    Show version
+
 ## Field names
 
 Use `--sample-fields 1000` to output the occurrence count of different Twitter fields, like so:
