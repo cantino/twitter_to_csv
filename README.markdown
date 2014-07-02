@@ -103,10 +103,14 @@ If you did want to allow _area by the bay_, you might need something like:
 Use `twitter_to_csv --help` to see all available options:
 
     Usage: twitter_to_csv [options]
-
-    Specific options:
-        -u, --username USERNAME          Twitter username
-        -p, --password PASSWORD          Twitter password
+    
+    These four fields are required.  Please see the README to learn how to get them for your Twitter account.
+            --api-key KEY                Twitter API key
+            --api-secret SECRET          Twitter API secret
+            --access-token TOKEN         Twitter access token
+            --access-token-secret SECRET Twitter access token secret
+    
+    General settings:
         -c, --csv FILE                   The CSV file to append to, or - for STDOUT
         -j, --json FILE                  The JSON file to append to, or - for STDOUT
         -f, --filter KEYWORDS            Keywords to ask Twitter to filter on
@@ -140,7 +144,7 @@ Use `twitter_to_csv --help` to see all available options:
                                          This option can be used multiple times.
             --start TIME                 Ignore tweets with a created_at earlier than TIME
             --end TIME                   Ignore tweets with a created_at later than TIME
-
+    
     If you would like to do special retweet handling, use the following options.
     For these to function, you must be using --replay-from-file.  The replay will be performed in reverse.
             --retweet-mode MODE          Determine how to handle retweets
