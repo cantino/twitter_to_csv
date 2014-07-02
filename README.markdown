@@ -6,9 +6,12 @@ A tool for exporting the Twitter stream into a CSV file.
 
 ## Usage
 
+### Quick Example
+
 You might start by first running the script for a while to dump the Twitter stream into a JSON file:
 
-    twitter_to_csv --username <your twitter username> --password <your twitter password> \
+    twitter_to_csv --api-key <your twitter api key> --api-secret <your twitter api secret> \
+                   --access-token <your twitter access token> --access-token-secret <your twitter access token secret> \
                    --json out.json --filter your,keywords,of,interest
 
 Then, later, you could export to CSV:
@@ -18,32 +21,39 @@ Then, later, you could export to CSV:
 
 Alternatively, you can always stream directly to CSV:
 
-    twitter_to_csv --username <your twitter username> --password <your twitter password> \
+    twitter_to_csv --api-key <your twitter api key> --api-secret <your twitter api secret> \
+                   --access-token <your twitter access token> --access-token-secret <your twitter access token secret> \
                    --filter your,keywords,of,interest --csv out.csv \
                    --fields text,created_at,user.name,retweeted_status.id,retweeted_status.favorited,...
+
+### Getting your Twitter API Key and Token
+
+Twitter requires all API access over oAuth. Follow these instructions to get register and authorize a free Twitter API Application:
+
+ * Visit https://apps.twitter.com/app/new
+ * Enter something like "my twitter\_to\_csv" as the name, "Using twitter_to_csv Ruby gem" as the description, and "https://github.com/cantino/twitter_to_csv" as the website.
+ * Click "manage API keys"
+ * Copy down the "API key" and "API secret"
+ * Click "Create my access token" at the bottom of the page, refreshing until your new access token shows up at the bottom of the page.  Copy down your "Access token" and "Access token secret".
+ * You're all set!
 
 ## Requiring English
 
 You may want to limit to Tweets that appear to be written in English.
 
-    twitter_to_csv --username <your twitter username> --password <your twitter password> \
+    twitter_to_csv --api-key <your twitter api key> --api-secret <your twitter api secret> \
+                   --access-token <your twitter access token> --access-token-secret <your twitter access token secret> \
                    --require-english --fields ...
 
 This filter isn't perfect and will have both false positives and false negatives, but it works fairly well.
 
 ## URLS, Hashtags, and User Mentions
 
-You can extract URLs, Hashtags, and User Mentions from the tweet into their own columns by using `--url-columns`, `--hashtag-columns`, and `--user-mention-columns`.
-For example, you could use `--url-columns 3` to get up to 3 extracted URLs in their own columns.
+You can extract URLs, Hashtags, and User Mentions from the tweet into their own columns by using `--url-columns`, `--hashtag-columns`, and `--user-mention-columns`.  For example, you could use `--url-columns 3` to get up to 3 extracted URLs in their own columns.
 
 ## Sentiment Tagging
 
-Twitter To CSV can compute an average sentiment score for each tweet.  Provide `--compute-sentiment` to use this feature.
-The [AFINN-111](http://fnielsen.posterous.com/old-anew-a-sentiment-about-sentiment-analysis) valence database is used to look up the valence of
-each recognized word, then the average is computed, only considering words that have some known valence associated.  That is, "I love cheese" only has
-one word with valence, "love" with a score of 3, so the average is 3.  "I love cheese and like bread", on the other hand, has two words with
-valence, "love" (3) and "like" (2), and so has an average valence of (3 + 2) / 2, or 2.5.  The library will break hyphenated words up and score them as
-separate words unless the whole thing has a single known valence.
+Twitter To CSV can compute an average sentiment score for each tweet.  Provide `--compute-sentiment` to use this feature. The [AFINN-111](http://fnielsen.posterous.com/old-anew-a-sentiment-about-sentiment-analysis) valence database is used to look up the valence of each recognized word, then the average is computed, only considering words that have some known valence associated.  That is, "I love cheese" only has one word with valence, "love" with a score of 3, so the average is 3.  "I love cheese and like bread", on the other hand, has two words with valence, "love" (3) and "like" (2), and so has an average valence of (3 + 2) / 2, or 2.5.  The library will break hyphenated words up and score them as separate words unless the whole thing has a single known valence.
 
 ## Handling of Retweets
 
@@ -77,7 +87,9 @@ Sometimes the Twitter API goes down.  You can analyze a json output file to see 
 
 Use `--sample-fields 1000` to output the occurrence count of different Twitter fields, like so:
 
-    twitter_to_csv --username <your twitter username> --password <your twitter password> --sample-fields 1000
+    twitter_to_csv --api-key <your twitter api key> --api-secret <your twitter api secret> \
+                   --access-token <your twitter access token> --access-token-secret <your twitter access token secret> \
+                   --sample-fields 1000
 
 Here's a partial list:
 

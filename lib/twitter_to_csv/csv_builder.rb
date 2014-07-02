@@ -25,7 +25,7 @@ module TwitterToCsv
             handle_status status
           end
         rescue SignalException, SystemExit
-          EventMachine::stop_event_loop
+          EventMachine::stop_event_loop if EventMachine::reactor_running?
           exit
         rescue StandardError => e
           STDERR.puts "\nException #{e.message}:\n#{e.backtrace.join("\n")}\n\n"

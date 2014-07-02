@@ -8,16 +8,28 @@ require File.expand_path(File.join(File.dirname(__FILE__), '..', 'lib', 'twitter
 options = { :fields => %w[created_at text] }
 parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename($0)} [options]"
+
   opts.separator ""
-  opts.separator "Specific options:"
+  opts.separator "These four fields are required.  Please see the README to learn how to get them for your Twitter account."
 
-  opts.on("-u", "--username USERNAME", "Twitter username") do |username|
-    options[:username] = username
+  opts.on("--api-key KEY", "Twitter API key") do |api_key|
+    options[:api_key] = api_key
   end
 
-  opts.on("-p", "--password PASSWORD", "Twitter password") do |password|
-    options[:password] = password
+  opts.on("--api-secret SECRET", "Twitter API secret") do |api_secret|
+    options[:api_secret] = api_secret
   end
+
+  opts.on("--access-token TOKEN", "Twitter access token") do |access_token|
+    options[:access_token] = access_token
+  end
+
+  opts.on("--access-token-secret SECRET", "Twitter access token secret") do |access_token_secret|
+    options[:access_token_secret] = access_token_secret
+  end
+
+  opts.separator ""
+  opts.separator "General settings:"
 
   opts.on("-c", "--csv FILE", "The CSV file to append to, or - for STDOUT") do |csv|
     options[:csv_appending] = File.exists?(csv)
@@ -125,8 +137,8 @@ end
 
 parser.parse!
 
-unless (options[:username] && options[:password]) || options[:replay_from_file]
-  STDERR.puts "Error: Twitter username and password are required fields unless you're replaying from a file.\n\n"
+unless (options[:api_key] && options[:api_secret] && options[:access_token] && options[:access_token_secret]) || options[:replay_from_file]
+  STDERR.puts "Error: The four Twitter credential fields are required unless you're replaying from a file.\n\n"
   STDERR.puts parser
   exit 1
 end
