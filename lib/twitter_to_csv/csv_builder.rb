@@ -70,13 +70,9 @@ module TwitterToCsv
         # This is an original status.
         if (@retweet_counts[status['id']] || 0) >= (options[:retweet_threshold] || 0)
           if !options[:retweet_window] || created_at <= @newest_status_at - options[:retweet_window] * 60 * 60 * 24
-            status['retweet_count'] = @retweet_counts[status['id']] if @retweet_counts[status['id']] && @retweet_counts[status['id']] > status['retweet_count']
+            status['retweet_count'] = @retweet_counts[status['id']] || 0 # if @retweet_counts[status['id']] && @retweet_counts[status['id']] > status['retweet_count']
             if options[:retweet_counts_at]
-              retweet_hour_data = @retweet_hour_counts.delete(status['id'])
-              if !retweet_hour_data
-                puts "Encountered missing retweet_data for tweet##{status['id']}, possibly due to a repeating id or a deleted tweet."
-                return false
-              end
+              retweet_hour_data = @retweet_hour_counts.delete(status['id']) || options[:retweet_counts_at].map { 0 }
               status['_retweet_hour_counts'] = retweet_hour_data
             end
             true
@@ -90,8 +86,10 @@ module TwitterToCsv
     end
 
     def handle_status(status, &block)
-      if within_time_window?(status)
-        if (options[:require_english] && is_english?(status)) || !options[:require_english]
+      if status.has_key?('delete')
+        STDERR.puts "Skipping Tweet with delete." if options[:verbose]
+      elsif within_time_window?(status)
+        if (options[:require_english] && is_english?(status, options[:require_english])) || !options[:require_english]
           if options[:retweet_mode] != :rollup || display_rolledup_status?(status)
             log_json(status) if options[:json]
             log_csv(status) if options[:csv]
@@ -124,6 +122,10 @@ module TwitterToCsv
       options[:hashtag_columns].times { |i| header_labels << "hash_tag_#{i+1}" } if options[:hashtag_columns] && options[:url_columns] > 0
       options[:user_mention_columns].times { |i| header_labels << "user_mention_#{i+1}" } if options[:user_mention_columns] && options[:user_mention_columns] > 0
 
+      (options[:bool_word_fields] || []).each do |pattern|
+        header_labels << pattern[:name]
+      end
+
       options[:csv].puts header_labels.to_csv(:encoding => 'UTF-8', :force_quotes => true)
     end
 
@@ -137,9 +139,19 @@ module TwitterToCsv
 
     def output_row(status)
       row = options[:fields].map do |field|
-        field.split(".").inject(status) { |memo, segment|
+        value = field.split(".").inject(status) { |memo, segment|
           memo && memo[segment]
         }.to_s
+
+        if options[:prefix_ids]
+          value = "id" + value if value.length > 0 && (field =~ /\Aid_str|id\Z/ || field =~ /_id|_id_str\Z/)
+        end
+
+        if options[:remove_quotes]
+          value = value.gsub(/\"/, '')
+        end
+
+        value
       end
 
       row += compute_sentiment(status["text"]) if options[:compute_sentiment]
@@ -151,7 +163,7 @@ module TwitterToCsv
       (options[:date_fields] || []).each do |date_field|
         time = Time.parse(date_field.split(".").inject(status) { |memo, segment|
           memo && memo[segment]
-        }.to_s)
+        }.to_s).utc
 
         row << time.strftime("%w") # week_day
         row << time.strftime("%-d") # day
@@ -177,6 +189,10 @@ module TwitterToCsv
       if options[:user_mention_columns] && options[:user_mention_columns] > 0
         users = (status["entities"] && (status["entities"]["user_mentions"] || []).map {|i| i["screen_name"] }) || []
         options[:user_mention_columns].times { |i| row << users[i].to_s }
+      end
+
+      (options[:bool_word_fields] || []).each do |pattern|
+        row << (!!TwitterToCsv::BoolWordFieldParser.check(pattern, status["text"])).to_s
       end
 
       row
@@ -239,24 +255,30 @@ module TwitterToCsv
     end
 
     def sample_fields(status)
-      extract_fields(status, sampled_fields)
+      extract_fields status, sampled_fields
       @num_samples += 1
       if @num_samples > options[:sample_fields]
         puts "Sampled fields from Twitter:"
         sampled_fields.each do |field, count|
           puts " #{field} #{' ' * [60 - field.length, 0].max} #{count}"
         end
-        exit 1
+        exit 0
       end
     end
 
-    def extract_fields(object, fields, current_path = [])
+    def extract_fields(object, fields, current_path = "")
       if object.is_a?(Hash)
         object.each do |k, v|
-          extract_fields v, fields, current_path + [k]
+          extract_fields v, fields, current_path + "." + k.to_s
         end
+      elsif object.is_a?(Array)
+        local_fields = {}
+        object.each do |v|
+          extract_fields v, local_fields, current_path + "[]"
+        end
+        local_fields.keys.each { |key| fields[key] ||= 0 ; fields[key] += 1 }
       else
-        path = current_path.join(".")
+        path = current_path[1..-1]
         fields[path] ||= 0
         fields[path] += 1
       end
@@ -268,19 +290,19 @@ module TwitterToCsv
       options[:json].flush
     end
 
-    def is_english?(status)
-      if status.has_key?('delete')
-        STDERR.puts "Skipping Tweet with delete." if options[:verbose]
-        return false
+    def is_english?(status, strategy)
+      unless strategy == :twitter
+        status['uld'] = !!UnsupervisedLanguageDetection.is_english_tweet?(status['text'])
       end
-
-      #unless status['user']['lang'] == "en"
-      #  STDERR.puts "Skipping \"#{status['text']}\" due to lang of #{status['user']['lang']}." if options[:verbose]
-      #  return false
-      #end
-
-      unless UnsupervisedLanguageDetection.is_english_tweet?(status['text'])
-        STDERR.puts "Skipping \"#{status['text']}\" due to UnsupervisedLanguageDetection guessing non-English" if options[:verbose]
+      
+      if strategy == :both && status['lang'] != 'en' && !status['uld']
+        STDERR.puts "Skipping \"#{status['text']}\" because both Twitter (#{status['lang']}) and UnsupervisedLanguageDetection think it is not English." if options[:verbose]
+        return false
+      elsif strategy == :uld && !status['uld']
+        STDERR.puts "Skipping \"#{status['text']}\" because UnsupervisedLanguageDetection thinks it is not English." if options[:verbose]
+        return false
+      elsif strategy == :twitter && status['lang'] != 'en'
+        STDERR.puts "Skipping \"#{status['text']}\" because Twitter (#{status['lang']}) thinks it is not English." if options[:verbose]
         return false
       end
 
