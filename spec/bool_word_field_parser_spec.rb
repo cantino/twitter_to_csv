@@ -29,18 +29,18 @@ describe TwitterToCsv::BoolWordFieldParser do
   describe "#check" do
     it "returns true when an expression matches some text, false when it doesn't" do
       pattern = TwitterToCsv::BoolWordFieldParser.parse("something_else:string1 string2 OR (string3 AND (string4 OR string5))")
-      TwitterToCsv::BoolWordFieldParser.check(pattern, "string1 string2").should be_true
-      TwitterToCsv::BoolWordFieldParser.check(pattern, "string2 string1").should be_false
-      TwitterToCsv::BoolWordFieldParser.check(pattern, "string1").should be_false
-      TwitterToCsv::BoolWordFieldParser.check(pattern, "string2").should be_false
-      TwitterToCsv::BoolWordFieldParser.check(pattern, "string3 string4").should be_true
-      TwitterToCsv::BoolWordFieldParser.check(pattern, "string4 string3").should be_true
-      TwitterToCsv::BoolWordFieldParser.check(pattern, "string5 string3").should be_true
-      TwitterToCsv::BoolWordFieldParser.check(pattern, "foo bar string3 string5 baz").should be_true
-      TwitterToCsv::BoolWordFieldParser.check(pattern, "foo bar string5 baz").should be_false
-      TwitterToCsv::BoolWordFieldParser.check(pattern, "foo bar string3 string4 string5 baz").should be_true
-      TwitterToCsv::BoolWordFieldParser.check(pattern, "foo bar string3 string5 baz string4").should be_true
-      TwitterToCsv::BoolWordFieldParser.check(pattern, "string1 string2 string3 string4").should be_true
+      TwitterToCsv::BoolWordFieldParser.check(pattern, "string1 string2").should be(true)
+      TwitterToCsv::BoolWordFieldParser.check(pattern, "string2 string1").should be(false)
+      TwitterToCsv::BoolWordFieldParser.check(pattern, "string1").should be(false)
+      TwitterToCsv::BoolWordFieldParser.check(pattern, "string2").should be(false)
+      TwitterToCsv::BoolWordFieldParser.check(pattern, "string3 string4").should be(true)
+      TwitterToCsv::BoolWordFieldParser.check(pattern, "string4 string3").should be(true)
+      TwitterToCsv::BoolWordFieldParser.check(pattern, "string5 string3").should be(true)
+      TwitterToCsv::BoolWordFieldParser.check(pattern, "foo bar string3 string5 baz").should be(true)
+      TwitterToCsv::BoolWordFieldParser.check(pattern, "foo bar string5 baz").should be(false)
+      TwitterToCsv::BoolWordFieldParser.check(pattern, "foo bar string3 string4 string5 baz").should be(true)
+      TwitterToCsv::BoolWordFieldParser.check(pattern, "foo bar string3 string5 baz string4").should be(true)
+      TwitterToCsv::BoolWordFieldParser.check(pattern, "string1 string2 string3 string4").should be(true)
     end
 
     it "raises errors when the input is un-evaluable" do
