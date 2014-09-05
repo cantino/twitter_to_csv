@@ -6,6 +6,13 @@ A tool for exporting the Twitter stream into a CSV file.
 
     (sudo) gem install twitter_to_csv
 
+## Publications
+
+> [Perspectives on Acne: What Twitter Can Teach Health Care Providers](http://archderm.jamanetwork.com/article.aspx?articleid=1688056) Shive M, Bhatt M, Cantino A, Kvedar J, Jethwani K., JAMA Dermatol. 2013;149(5):621-622. doi:10.1001/jamadermatol.2013.248.
+
+> [Twitter: an opportunity for public health campaigns](http://www.thelancet.com/journals/lancet/article/PIIS0140-6736\(14\)61161-2/fulltext)
+Mackenzie R Wehner, Mary-Margaret Chren, Melissa L Shive, Jack S Resneck, Sherry Pagoto, Andrew B Seidenberg, Eleni Linos, The Lancet 12 July 2014 (Volume 384 Issue 9938 Pages 131-132 DOI: 10.1016/S0140-6736(14)61161-2)
+
 ## Usage
 
 ### Quick Example
